@@ -123,10 +123,7 @@ void findNextNonLastChar(char password[])
          //reset all other characters to 'A'
          //if zero index is the last letter
          //exit 
-         
-         
-         
-         
+        
           //printf("last char loop: countdown: %i\n", countdown);
 
           // Password's zero index is at 'z'
@@ -148,18 +145,46 @@ void findNextNonLastChar(char password[])
              */
           if (countdown == 0)
           {
+
+            for (int i = 1; i < passLen; i++)
+                {
+                    password[i] = 'A';
+                }
+
             if (password[0] != 'C')
             {
                   password[0] = advanceChar(password[0]);
-
-                 for (int j = 1; j < passLen; j++)
-                 {
-                     password[j] = 'A';
-                 }
             }  
             else 
             {
-                
+            // The last char has been reached in the zero index.
+            // If all the chars in password are at the end, add a new char and reset
+            // Otherwise, run through with the last char in the 0 index
+
+
+                bool allLastChars = false;
+
+                for (int i = 1; i < passLen; i++)
+                 {
+                     if (password[i] != 'C')
+                     {
+                         allLastChars = true;
+                         i = passLen;
+                     }
+                 }
+
+                 if (allLastChars)
+                 {
+                    password[0] = 'A';
+                    password[passLen] = 'A';
+                    password[passLen + 1] = '\0'; 
+                 }
+
+
+
+                //check if all chars are lastchar
+                //if yes, reset password to all 'A' and then add a new char to end
+                //else reset all chars except 0 to 'A' and run again
                 
             }
               
