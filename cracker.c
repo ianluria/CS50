@@ -192,7 +192,7 @@ void findNextNonLastChar(char password[])
                 
             }
 
-            for (int i = 1; i < passLen; i++)
+            for (int i = 1; i < strlen(password); i++)
             {
                 password[i] = 'A';
             }
