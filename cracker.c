@@ -1,20 +1,41 @@
+#define _XOPEN_SOURCE
+#include <unistd.h>
 #include <cs50.h>
 #include <stdio.h>
 #include <string.h>
 
+void populateAlphabetArray(char alpha[]);
 char advanceChar(char character);
 void createNewTestPassword(char newPassword[], char password[], char letter);
 void findNextNonLastChar(char password[]);
 void loopAlphabet(char *password, char alpha[]);
 
-int main(void)
+int main(int argc, string argv[])
 {   
+     bool throwError = false;
+    
+    if (argc != 2)
+    {
+       throwError = true;      
+    }
+    
+    if (throwError)
+    {
+       printf("Usage: ./crack hash");
+       return 1;
+    }
+    
+    const string HASHEDPASSWORD = argv[1];
+
+    const char SALT[] = {HASHEDPASSWORD[0], HASHEDPASSWORD[1], '\0'};
+
     // Max five char + null for storing evolving password
     char password[6] = "A"; 
+    char alpha[53];
 
-    //bool run = true; 
+    populateAlphabetArray(alpha);
+
     
-    char alpha[]= "ABC";
     
     // Checks each individual letter for matching hash 
     for (int i = 0; i < strlen(alpha); i++)
@@ -29,9 +50,10 @@ int main(void)
     // Loop will run until a matching password is found or 'zzzzz' is reached
     // 
     
-    int testCount = 0;
+    //int testCount = 0;
+    bool run = true; 
     
-    while (testCount < 20)
+    while (run)
     {
         //printf("\nrun loop: password is now: %s\n", password);
         
@@ -39,14 +61,14 @@ int main(void)
 
         printf("passLen = %d\n", passLen);
 
-        if (passLen > 2)
+        if (passLen > 3)
         {
             break;
         }
        
         loopAlphabet(password, alpha);
         
-        testCount++;
+        //testCount++;
     } 
 
     printf("final returned password: %s\n", password);
@@ -181,7 +203,7 @@ void findNextNonLastChar(char password[])
                     password[0] = 'A';
                     password[passLen] = 'A';
                     password[passLen + 1] = '\0';
-                    printf("all last characters, password now: %s\n", password); 
+                   
                  }
 
 
@@ -197,7 +219,7 @@ void findNextNonLastChar(char password[])
                 password[i] = 'A';
             }
 
-              
+              // printf("all last characters, password now: %s\n", password); 
               break;
           }
 
@@ -227,7 +249,35 @@ char advanceChar(char character)
      return character + 1;
 }
 
+void populateAlphabetArray(char alpha[])
+{
+    int index = 0;
 
+    for (char i = 'A'; i < '['; i++)
+    {
+        alpha[index] = i;
+        index++;
+    }
+
+    for (char i = 'a'; i < '{'; i++)
+    {
+        alpha[index] = i;
+        index++;
+    }
+
+
+    alpha[strlen(alpha)-1] = '\0';
+
+    printf("\n");
+
+    for (int i = 0; i < strlen(alpha); i++)
+    {
+        printf("%c ", alpha[i]);
+    }
+
+    printf("\n");
+
+}
 
    
 
