@@ -148,10 +148,7 @@ void findNextNonLastChar(char password[])
           if (countdown == 0)
           {
               //printf("countdown = 0\n");
-            for (int i = 1; i < passLen; i++)
-                {
-                    password[i] = 'A';
-                }
+            
 
 
               //  printf("password is now: %s\n", password);
@@ -194,6 +191,12 @@ void findNextNonLastChar(char password[])
                 //else reset all chars except 0 to 'A' and run again
                 
             }
+
+            for (int i = 1; i < passLen; i++)
+            {
+                password[i] = 'A';
+            }
+
               
               break;
           }
