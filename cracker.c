@@ -31,11 +31,13 @@ int main(void)
     
     int testCount = 0;
     
-    while (testCount < 10)
+    while (testCount < 20)
     {
         //printf("\nrun loop: password is now: %s\n", password);
         
         int passLen = strlen(password);
+
+        printf("passLen = %d\n", passLen);
 
         if (passLen > 2)
         {
@@ -145,11 +147,14 @@ void findNextNonLastChar(char password[])
              */
           if (countdown == 0)
           {
-
+              //printf("countdown = 0\n");
             for (int i = 1; i < passLen; i++)
                 {
                     password[i] = 'A';
                 }
+
+
+              //  printf("password is now: %s\n", password);
 
             if (password[0] != 'C')
             {
@@ -161,23 +166,25 @@ void findNextNonLastChar(char password[])
             // If all the chars in password are at the end, add a new char and reset
             // Otherwise, run through with the last char in the 0 index
 
-
-                bool allLastChars = false;
+            printf("password[0] = 'C'\n");
+                bool allLastChars = true;
 
                 for (int i = 1; i < passLen; i++)
                  {
                      if (password[i] != 'C')
                      {
-                         allLastChars = true;
-                         i = passLen;
+                         allLastChars = false;
+                         //i = passLen;
                      }
                  }
 
                  if (allLastChars)
                  {
+                    //printf("all last characters\n");
                     password[0] = 'A';
                     password[passLen] = 'A';
-                    password[passLen + 1] = '\0'; 
+                    password[passLen + 1] = '\0';
+                    printf("all last characters, password now: %s\n", password); 
                  }
 
 
