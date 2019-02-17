@@ -21,7 +21,7 @@ int main(int argc, string argv[])
     
     if (throwError)
     {
-       printf("Usage: ./crack hash");
+       printf("Usage: ./crack hash\n");
        return 1;
     }
     
@@ -35,8 +35,6 @@ int main(int argc, string argv[])
 
     populateAlphabetArray(alpha);
 
-    
-    
     // Checks each individual letter for matching hash 
     for (int i = 0; i < strlen(alpha); i++)
     {
@@ -48,7 +46,7 @@ int main(int argc, string argv[])
     }
     
     // Loop will run until a matching password is found or 'zzzzz' is reached
-    // 
+
     
     //int testCount = 0;
     bool run = true; 
@@ -265,9 +263,9 @@ void populateAlphabetArray(char alpha[])
         index++;
     }
 
+    alpha[52] = '\0';
 
-    alpha[strlen(alpha)-1] = '\0';
-
+    /*
     printf("\n");
 
     for (int i = 0; i < strlen(alpha); i++)
@@ -276,7 +274,7 @@ void populateAlphabetArray(char alpha[])
     }
 
     printf("\n");
-
+    */
 }
 
    
