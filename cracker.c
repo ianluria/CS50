@@ -9,6 +9,7 @@ char advanceChar(char character);
 void createNewTestPassword(char newPassword[], char password[], char letter);
 void findNextNonLastChar(char password[]);
 void loopAlphabet(char *password, char alpha[]);
+void cryptPassword(char password[], bool *match, const char SALT[], const char HASHEDPASSWORD[]);
 
 int main(int argc, string argv[])
 {   
@@ -21,7 +22,7 @@ int main(int argc, string argv[])
     
     if (throwError)
     {
-       printf("Usage: ./crack hash\n");
+       printf("Usage: ./crack hash");
        return 1;
     }
     
@@ -38,19 +39,27 @@ int main(int argc, string argv[])
     // Checks each individual letter for matching hash 
     for (int i = 0; i < strlen(alpha); i++)
     {
-        /*
-         * if string from crypt matches hash
-         * return alpha[i] as password 
-         */  
+        
+        bool *match;
+        
+        cryptPassword(password, match, SALT, HASHEDPASSWORD);
+        
+        if (*match)
+        {
+            //password is a match!!!!
+            return 0;
+        }
+      
         printf("New test password: %c\n", alpha[i]);
     }
     
     // Loop will run until a matching password is found or 'zzzzz' is reached
-
+    // 
     
     //int testCount = 0;
     bool run = true; 
     
+     //while (testCount < 10)
     while (run)
     {
         //printf("\nrun loop: password is now: %s\n", password);
@@ -94,8 +103,17 @@ void loopAlphabet(char *password, char alpha[])
         createNewTestPassword(newPassword, password, letter);  
 
         printf("New test password: %s\n", newPassword);
-        //crypt function
-        //return if hashes match
+        
+        bool *match;
+        
+        cryptPassword(password, match, SALT, HASHEDPASSWORD);
+
+        if (*match)
+        {
+            //password is a match!!!!
+            return;
+        }
+
         //past this point, hash has failed
 
         // If last letter of alpha[] has been reached
@@ -263,9 +281,9 @@ void populateAlphabetArray(char alpha[])
         index++;
     }
 
+
     alpha[52] = '\0';
 
-    /*
     printf("\n");
 
     for (int i = 0; i < strlen(alpha); i++)
@@ -274,10 +292,27 @@ void populateAlphabetArray(char alpha[])
     }
 
     printf("\n");
-    */
+
 }
 
-   
+
+// Hashes a test password and assigns true to *match if the hashed password matches the HASHEDPASSWORD
+void cryptPassword(char password[], bool *match, const char SALT[], const char HASHEDPASSWORD[])
+{
+    char testHash[14] = crypt(password, SALT);
+    
+    int matchedHashes = strncmp(testHash, HASHEDPASSWORD, 13);
+    
+    if (matchedHashes == 0)
+    {
+        match = true;
+    }
+    else
+    {
+        match = false;
+    }
+    
+}
 
 
 
