@@ -8,7 +8,7 @@ void populateAlphabetArray(char alpha[]);
 char advanceChar(char character);
 void createNewTestPassword(char newPassword[], char password[], char letter);
 void findNextNonLastChar(char password[]);
-void loopAlphabet(char *password, char alpha[]);
+void loopAlphabet(char *password, char alpha[], const char SALT[], const char HASHEDPASSWORD[]);
 void cryptPassword(char password[], bool *match, const char SALT[], const char HASHEDPASSWORD[]);
 
 int main(int argc, string argv[])
@@ -22,7 +22,7 @@ int main(int argc, string argv[])
     
     if (throwError)
     {
-       printf("Usage: ./crack hash");
+       printf("Usage: ./crack hash\n");
        return 1;
     }
     
@@ -47,6 +47,7 @@ int main(int argc, string argv[])
         if (*match)
         {
             //password is a match!!!!
+            printf("%s is a password match", password);
             return 0;
         }
       
@@ -54,7 +55,6 @@ int main(int argc, string argv[])
     }
     
     // Loop will run until a matching password is found or 'zzzzz' is reached
-    // 
     
     //int testCount = 0;
     bool run = true; 
@@ -66,14 +66,14 @@ int main(int argc, string argv[])
         
         int passLen = strlen(password);
 
-        printf("passLen = %d\n", passLen);
+        //printf("passLen = %d\n", passLen);
 
         if (passLen > 3)
         {
             break;
         }
        
-        loopAlphabet(password, alpha);
+        loopAlphabet(password, alpha, const char SALT[], const char HASHEDPASSWORD[]);
         
         //testCount++;
     } 
@@ -84,7 +84,7 @@ int main(int argc, string argv[])
 }
 
 // Appends a letter to the end of password and tests its hash
-void loopAlphabet(char *password, char alpha[])
+void loopAlphabet(char *password, char alpha[], const char SALT[], const char HASHEDPASSWORD[])
 {    
 
     const int ALPHALEN = strlen(alpha);
@@ -111,6 +111,7 @@ void loopAlphabet(char *password, char alpha[])
         if (*match)
         {
             //password is a match!!!!
+             printf("%s is a password match", password);
             return;
         }
 
@@ -300,6 +301,8 @@ void populateAlphabetArray(char alpha[])
 void cryptPassword(char password[], bool *match, const char SALT[], const char HASHEDPASSWORD[])
 {
     char testHash[14] = crypt(password, SALT);
+
+    testHash[13] = '\0';
     
     int matchedHashes = strncmp(testHash, HASHEDPASSWORD, 13);
     
@@ -310,12 +313,8 @@ void cryptPassword(char password[], bool *match, const char SALT[], const char H
     else
     {
         match = false;
-    }
-    
+    { 
 }
-
-
-
 
 
 
