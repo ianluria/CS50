@@ -40,7 +40,7 @@ int main(int argc, string argv[])
     for (int i = 0; i < strlen(alpha); i++)
     {
         
-        bool *match;
+        bool *match = false;
         
         cryptPassword(password, match, SALT, HASHEDPASSWORD);
         
@@ -73,7 +73,7 @@ int main(int argc, string argv[])
             break;
         }
        
-        loopAlphabet(password, alpha, const char SALT[], const char HASHEDPASSWORD[]);
+        loopAlphabet(password, alpha, SALT, HASHEDPASSWORD);
         
         //testCount++;
     } 
@@ -104,7 +104,7 @@ void loopAlphabet(char *password, char alpha[], const char SALT[], const char HA
 
         printf("New test password: %s\n", newPassword);
         
-        bool *match;
+        bool *match = false;
         
         cryptPassword(password, match, SALT, HASHEDPASSWORD);
 
@@ -300,7 +300,7 @@ void populateAlphabetArray(char alpha[])
 // Hashes a test password and assigns true to *match if the hashed password matches the HASHEDPASSWORD
 void cryptPassword(char password[], bool *match, const char SALT[], const char HASHEDPASSWORD[])
 {
-    char testHash[14] = crypt(password, SALT);
+    char *testHash = crypt(password, SALT);
 
     testHash[13] = '\0';
     
@@ -308,12 +308,12 @@ void cryptPassword(char password[], bool *match, const char SALT[], const char H
     
     if (matchedHashes == 0)
     {
-        match = true;
+        *match = true;
     }
     else
     {
-        match = false;
-    { 
+        *match = false;
+    } 
 }
 
 
