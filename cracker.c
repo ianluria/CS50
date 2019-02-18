@@ -8,10 +8,11 @@ void populateAlphabetArray(char alpha[]);
 char advanceChar(char character);
 void createNewTestPassword(char newPassword[], char password[], char letter);
 void findNextNonLastChar(char password[]);
-void loopAlphabet(char *password, char alpha[], const char SALT[], const char HASHEDPASSWORD[]);
+bool loopAlphabet(char *password, char alpha[], const char SALT[], const char HASHEDPASSWORD[]);
 bool cryptPassword(char password[], const char SALT[], const char HASHEDPASSWORD[]);
 
 //50zqH8tIlmqO = crypt("AbC", "50")
+//505DdIgbrILbY = Ab
 
 
 int main(int argc, string argv[])
@@ -58,7 +59,7 @@ int main(int argc, string argv[])
             return 0;
         }
       
-        printf("New test password: %c\n", alpha[i]);
+        printf("New test password: %s\n", password);
     }
 
     printf("single alpha loop is done");
@@ -68,23 +69,29 @@ int main(int argc, string argv[])
     // Loop will run until a matching password is found or 'zzzzz' is reached
     
     //int testCount = 0;
-    bool run = true; 
+    //bool run = true; 
     
-     //while (testCount < 10)
-    while (run)
+     while (password[0] < 'B')
+    //while (run)
     {
-        //printf("\nrun loop: password is now: %s\n", password);
+        printf("\nrun loop: password is now: %s\n", password);
         
         int passLen = strlen(password);
 
         //printf("passLen = %d\n", passLen);
 
-        if (passLen > 3)
+        if (passLen > 2)
         {
             break;
         }
        
-        loopAlphabet(password, alpha, SALT, HASHEDPASSWORD);
+        bool foundPassword = loopAlphabet(password, alpha, SALT, HASHEDPASSWORD);
+
+        if(foundPassword)
+        {
+            printf("Password found!!!! %s\n", password);
+            break;
+        }
         
         //testCount++;
     } 
@@ -95,7 +102,7 @@ int main(int argc, string argv[])
 }
 
 // Appends a letter to the end of password and tests its hash
-void loopAlphabet(char *password, char alpha[], const char SALT[], const char HASHEDPASSWORD[])
+bool loopAlphabet(char *password, char alpha[], const char SALT[], const char HASHEDPASSWORD[])
 {    
 
     const int ALPHALEN = strlen(alpha);
@@ -116,13 +123,14 @@ void loopAlphabet(char *password, char alpha[], const char SALT[], const char HA
         printf("New test password: %s\n", newPassword);
     
         
-        bool match = cryptPassword(password, SALT, HASHEDPASSWORD);
+        bool match = cryptPassword(newPassword, SALT, HASHEDPASSWORD);
 
         if (match)
         {
             //password is a match!!!!
-             printf("%s is a password match", password);
-            return;
+             printf("%s is a password match", newPassword);
+             strncpy(password, newPassword, strlen(newPassword) +1);
+            return true;
         }
 
         //past this point, hash has failed
@@ -140,6 +148,7 @@ void loopAlphabet(char *password, char alpha[], const char SALT[], const char HA
             findNextNonLastChar(password);  
         }
     }
+    return false;
 //printf("outside alphabet loop\n");
 }
 
@@ -202,7 +211,7 @@ void findNextNonLastChar(char password[])
 
               //  printf("password is now: %s\n", password);
 
-            if (password[0] != 'C')
+            if (password[0] != 'z')
             {
                   password[0] = advanceChar(password[0]);
             }  
@@ -212,12 +221,12 @@ void findNextNonLastChar(char password[])
             // If all the chars in password are at the end, add a new char and reset
             // Otherwise, run through with the last char in the 0 index
 
-            printf("password[0] = 'C'\n");
+            printf("password[0] = 'z'\n");
                 bool allLastChars = true;
 
                 for (int i = 1; i < passLen; i++)
                  {
-                     if (password[i] != 'C')
+                     if (password[i] != 'z')
                      {
                          allLastChars = false;
                          //i = passLen;
@@ -251,7 +260,7 @@ void findNextNonLastChar(char password[])
           }
 
           // Decrease index counter if that index is at the last letter  
-          if (password[countdown] == 'C')
+          if (password[countdown] == 'z')
           {
             countdown--;
           }
@@ -268,12 +277,13 @@ void findNextNonLastChar(char password[])
 char advanceChar(char character)
 {
     
-//      if (character == 'Z')
-//      {
-//      return 'a';
-//      }
+     if (character == 'Z')
+     {
+        return 'a';
+     }
      
-     return character + 1;
+    return character + 1;
+     
 }
 
 void populateAlphabetArray(char alpha[])
@@ -295,6 +305,7 @@ void populateAlphabetArray(char alpha[])
 
     alpha[52] = '\0';
 
+/*
     printf("\n");
 
     for (int i = 0; i < strlen(alpha); i++)
@@ -303,16 +314,23 @@ void populateAlphabetArray(char alpha[])
     }
 
     printf("\n");
-
+*/
 }
 
 
 // Hashes a test password and assigns true to *match if the hashed password matches the HASHEDPASSWORD
 bool cryptPassword(char password[], const char SALT[], const char HASHEDPASSWORD[])
 {
+
+    printf("cryptPassword-> HASHEDPASSWORD= %s \n", HASHEDPASSWORD);
+
+
+
     char *testHash = crypt(password, SALT);
 
     testHash[13] = '\0';
+
+    printf("cryptPassword--testHash= %s \n", testHash);
     
     int matchedHashes = strncmp(testHash, HASHEDPASSWORD, 13);
     
