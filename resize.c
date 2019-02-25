@@ -8,15 +8,24 @@
 int main(int argc, char *argv[])
 {
     // ensure proper usage
-    if (argc != 3)
+    if (argc != 4)
     {
-        fprintf(stderr, "Usage: copy infile outfile\n");
+        fprintf(stderr, "Usage: ./resize f infile outfile\n");
         return 1;
     }
 
+    // Get floating point number for f
+    float factor = 0;
+    sscanf(argv, "%*s %f", &factor);
+
+    if (float > 100.0)
+        float = 100.0;
+    else if (float < 0)
+        float = 0;
+
     // remember filenames
-    char *infile = argv[1];
-    char *outfile = argv[2];
+    char *infile = argv[2];
+    char *outfile = argv[3];
 
     // open input file
     FILE *inptr = fopen(infile, "r");
