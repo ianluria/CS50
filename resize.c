@@ -99,15 +99,12 @@ int main(int argc, char *argv[])
     // iterate over original infile's scanlines
     for (int i = 0, biHeight = abs(infoHeader.biHeight); i < biHeight; i++)
     {
-
-        //for each scan line, add every pixel by scale of factor into an array with the padding at end.
-        // write that array factor times to output
-
+        // Array used to hold a scanline of pixels 
         RGBTRIPLE scanlineArray[tempInfoHeader.biWidth - newPadding];
 
         int scanlineArrayIndex = 0;
 
-        // iterate over pixels in scanline
+        // iterate over pixels in original scanline
         for (int pixel = 0; pixel < infoHeader.biWidth; pixel++)
         {
             // temporary storage
@@ -124,18 +121,23 @@ int main(int argc, char *argv[])
             }
         }
 
-        // write pixels to outfile
-        for (size_t j = 0, size_t len = sizeof(scanlineArray) / sizeof(scanlineArray[0]); j < len; j++)
-        {
-            fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
-        }
-        // skip over padding, if any
+        // skip over padding in original file, if any
         fseek(inptr, oldPadding, SEEK_CUR);
 
-        // then add it back (to demonstrate how)
-        for (int k = 0; k < newPadding; k++)
+        // Write a new scanline by factor to output
+        for (int j = 0; j < factor; j++)
         {
-            fputc(0x00, outptr);
+            // write each pixel from scanlineArray to output
+            for (size_t j = 0, size_t len = sizeof(scanlineArray) / sizeof(scanlineArray[0]); j < len; j++)
+            {
+                fwrite(scanlineArray[j], sizeof(RGBTRIPLE), 1, outptr);
+            }
+
+            // Add newPadding
+            for (int k = 0; k < newPadding; k++)
+            {
+                fputc(0x00, outptr);
+            }
         }
     }
 
