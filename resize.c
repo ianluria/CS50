@@ -5,6 +5,8 @@
 
 #include "bmp.h"
 
+float roundDecimal(float factorDecimal);
+
 int main(int argc, char *argv[])
 {
     // ensure proper usage
@@ -18,10 +20,12 @@ int main(int argc, char *argv[])
     float factor = 0;
     sscanf(argv, "%*s %f", &factor);
 
-    if (float > 100.0)
-        float = 100.0;
-    else if (float < 0)
-        float = 0;
+    // A factor of 0 is the same as a factor of 1: return an exact copy of the image 
+    if (factor <= 0)
+        factor = 1;
+
+    // Rounds any decimal to a quarter
+    float factorDecimal = roundDecimal(factor % 1);
 
     // remember filenames
     char *infile = argv[2];
@@ -45,16 +49,16 @@ int main(int argc, char *argv[])
     }
 
     // read infile's BITMAPFILEHEADER
-    BITMAPFILEHEADER bf;
-    fread(&bf, sizeof(BITMAPFILEHEADER), 1, inptr);
+    BITMAPFILEHEADER fileHeader;
+    fread(&fileHeader, sizeof(BITMAPFILEHEADER), 1, inptr);
 
     // read infile's BITMAPINFOHEADER
-    BITMAPINFOHEADER bi;
-    fread(&bi, sizeof(BITMAPINFOHEADER), 1, inptr);
+    BITMAPINFOHEADER infoHeader;
+    fread(&infoHeader, sizeof(BITMAPINFOHEADER), 1, inptr);
 
     // ensure infile is (likely) a 24-bit uncompressed BMP 4.0
-    if (bf.bfType != 0x4d42 || bf.bfOffBits != 54 || bi.biSize != 40 ||
-        bi.biBitCount != 24 || bi.biCompression != 0)
+    if (fileHeader.bfType != 0x4d42 || fileHeader.bfOffBits != 54 || infoHeader.biSize != 40 ||
+        infoHeader.biBitCount != 24 || infoHeader.biCompression != 0)
     {
         fclose(outptr);
         fclose(inptr);
@@ -62,30 +66,52 @@ int main(int argc, char *argv[])
         return 4;
     }
 
+    // Make a temporary copy of fileHeader
+    BITMAPFILEHEADER tempFileHeader;
+    tempFileHeader = fileHeader;
+
+    // Make a temporary copy of infoHeader
+    BITMAPINFOHEADER tempInfoHeader;
+    tempInfoHeader = infoHeader;
+
+    // Change the width and height of image by factor
+    tempInfoHeader.biWidth *= factor;
+    tempInfoHeader.biHeight *= factor;
+
+    // Determine padding for scanlines
+    int padding = (4 - (tempInfoHeader.biWidth * sizeof(RGBTRIPLE)) % 4) % 4;
+
+    tempInfoHeader.biSizeImage = ((sizeof(RGBTRIPLE) * tempInfoHeader.biWidth) + padding) * abs(tempInfoHeader.biHeight);
+
+    tempFileHeader.bfSize = tempInfoHeader.biSizeImage + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+
     // write outfile's BITMAPFILEHEADER
-    fwrite(&bf, sizeof(BITMAPFILEHEADER), 1, outptr);
+    fwrite(&tempFileHeader, sizeof(BITMAPFILEHEADER), 1, outptr);
 
     // write outfile's BITMAPINFOHEADER
-    fwrite(&bi, sizeof(BITMAPINFOHEADER), 1, outptr);
+    fwrite(&tempInfoHeader, sizeof(BITMAPINFOHEADER), 1, outptr);
 
-    // determine padding for scanlines
-    int padding = (4 - (bi.biWidth * sizeof(RGBTRIPLE)) % 4) % 4;
-
-    // iterate over infile's scanlines
-    for (int i = 0, biHeight = abs(bi.biHeight); i < biHeight; i++)
+    // iterate over original infile's scanlines
+    for (int i = 0, biHeight = abs(infoHeader.biHeight); i < biHeight; i++)
     {
-        // iterate over pixels in scanline
-        for (int j = 0; j < bi.biWidth; j++)
-        {
-            // temporary storage
-            RGBTRIPLE triple;
 
-            // read RGB triple from infile
-            fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
+        //write each scanline * the factor
+        for (int j = 0; j < factor)
 
-            // write RGB triple to outfile
-            fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
-        }
+            // iterate over pixels in scanline
+            for (int pixel = 0; pixel < infoHeader.biWidth; pixel++)
+            {
+                // temporary storage
+                RGBTRIPLE triple;
+
+                // read RGB triple from infile
+                fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
+
+                // Try changing size_t nmemb to factor variable
+
+                // write RGB triple to outfile
+                fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
+            }
 
         // skip over padding, if any
         fseek(inptr, padding, SEEK_CUR);
@@ -105,4 +131,18 @@ int main(int argc, char *argv[])
 
     // success
     return 0;
+}
+
+float roundDecimal(float factorDecimal)
+{
+    if (factorDecimal > 0.75)
+        return 1.0; 
+    else if (factorDecimal > 0.5)
+        return 0.75;
+    else if (factorDecimal > 0.25)
+        return 0.50;
+    else if (factorDecimal > 0)
+        return 0.25;
+    else
+        return 0;
 }
