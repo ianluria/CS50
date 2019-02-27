@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "bmp.h"
 
@@ -18,15 +19,16 @@ int main(int argc, char *argv[])
 
     // Get floating point number for f
     float factor = 0;
-    sscanf(argv, "%*s %f", &factor);
+    sscanf(argv[1], "%f", &factor);
 
     // A factor of 0 is the same as a factor of 1: return an exact copy of the image
     if (factor <= 0)
         factor = 1;
 
     // Rounds any decimal to a quarter
-    float factorDecimal = roundDecimal(factor % 1);
-    int factorInt = factor - (factor % 1);
+    float factorRemainder = fmodf(factor, 1.0);
+    float factorDecimal = roundDecimal(factorRemainder);
+    int factorInt = factor - (factorRemainder);
     factor = factorInt + factorDecimal;
 
     // remember filenames
@@ -84,7 +86,7 @@ int main(int argc, char *argv[])
     int oldPadding = (4 - (infoHeader.biWidth * sizeof(RGBTRIPLE)) % 4) % 4;
     int newPadding = (4 - (tempInfoHeader.biWidth * sizeof(RGBTRIPLE)) % 4) % 4;
 
-    tempInfoHeader.biSizeImage = ((sizeof(RGBTRIPLE) * tempInfoHeader.biWidth) + padding) * abs(tempInfoHeader.biHeight);
+    tempInfoHeader.biSizeImage = ((sizeof(RGBTRIPLE) * tempInfoHeader.biWidth) + newPadding) * abs(tempInfoHeader.biHeight);
 
     tempFileHeader.bfSize = tempInfoHeader.biSizeImage + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
 
@@ -98,34 +100,42 @@ int main(int argc, char *argv[])
     for (int i = 0, biHeight = abs(infoHeader.biHeight); i < biHeight; i++)
     {
 
-        //write each original scanline * the factor
-        for (int j = 0; j < factor; j++)
+        //for each scan line, add every pixel by scale of factor into an array with the padding at end.
+        // write that array factor times to output
+
+        RGBTRIPLE scanlineArray[tempInfoHeader.biWidth - newPadding];
+
+        int scanlineArrayIndex = 0;
+
+        // iterate over pixels in scanline
+        for (int pixel = 0; pixel < infoHeader.biWidth; pixel++)
         {
-            // iterate over pixels in scanline
-            for (int pixel = 0; pixel < infoHeader.biWidth; pixel++)
+            // temporary storage
+            RGBTRIPLE triple;
+
+            // read RGB triple from infile
+            fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
+
+            // Write the pixel factor times into array
+            for (int k = 0; k < factor; k++)
             {
-                // temporary storage
-                RGBTRIPLE triple;
-
-                // read RGB triple from infile
-                fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
-
-                // Write the pixel factor times into the output
-                for (int k = 0; k < factor; k++)
-                {
-                    // write RGB triple to outfile
-                    fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
-                }
+                scanlineArray[scanlineArrayIndex] = triple;
+                scanlineArrayIndex += 1;
             }
+        }
 
-            // skip over padding, if any
-            fseek(inptr, oldPadding, SEEK_CUR);
+        // write pixels to outfile
+        for (size_t j = 0, size_t len = sizeof(scanlineArray) / sizeof(scanlineArray[0]); j < len; j++)
+        {
+            fwrite(&triple, sizeof(RGBTRIPLE), 1, outptr);
+        }
+        // skip over padding, if any
+        fseek(inptr, oldPadding, SEEK_CUR);
 
-            // then add it back (to demonstrate how)
-            for (int k = 0; k < newPadding; k++)
-            {
-                fputc(0x00, outptr);
-            }
+        // then add it back (to demonstrate how)
+        for (int k = 0; k < newPadding; k++)
+        {
+            fputc(0x00, outptr);
         }
     }
 
