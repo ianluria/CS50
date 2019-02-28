@@ -25,11 +25,14 @@ int main(int argc, char *argv[])
     if (factor <= 0)
         factor = 1;
 
+    // Round factor to nearest integer
+    factor = roundf(factor);
+
     // Rounds any decimal to a quarter
-    float factorRemainder = fmodf(factor, 1.0);
-    float factorDecimal = roundDecimal(factorRemainder);
-    int factorInt = factor - (factorRemainder);
-    factor = factorInt + factorDecimal;
+    // float factorRemainder = fmodf(factor, 1.0);
+    // float factorDecimal = roundDecimal(factorRemainder);
+    // int factorInt = factor - (factorRemainder);
+    // factor = factorInt + factorDecimal;
 
     // remember filenames
     char *infile = argv[2];
@@ -78,7 +81,9 @@ int main(int argc, char *argv[])
     BITMAPINFOHEADER tempInfoHeader;
     tempInfoHeader = infoHeader;
 
-    // Change the width and height of image by factor
+    // Change the width and height of image by factor, round down to nearest integer
+    // tempInfoHeader.biWidth = floor(tempInfoHeader.biWidth * factor);
+    // tempInfoHeader.biHeight = floor(tempInfoHeader.biHeight * factor);
     tempInfoHeader.biWidth *= factor;
     tempInfoHeader.biHeight *= factor;
 
@@ -99,7 +104,7 @@ int main(int argc, char *argv[])
     // iterate over original infile's scanlines
     for (int i = 0, biHeight = abs(infoHeader.biHeight); i < biHeight; i++)
     {
-        // Array used to hold a scanline of pixels 
+        // Array used to hold a scanline of pixels
         RGBTRIPLE scanlineArray[tempInfoHeader.biWidth - newPadding];
 
         int scanlineArrayIndex = 0;
