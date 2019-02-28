@@ -6,7 +6,7 @@
 
 #include "bmp.h"
 
-float roundDecimal(float factorDecimal);
+//float roundDecimal(float factorDecimal);
 
 int main(int argc, char *argv[])
 {
@@ -22,11 +22,14 @@ int main(int argc, char *argv[])
     sscanf(argv[1], "%f", &factor);
 
     // A factor of 0 is the same as a factor of 1: return an exact copy of the image
+    // A factor less than 1 is 0.5
+    // A factor 1 or greater is rounded to nearest integer
     if (factor <= 0)
         factor = 1;
-
-    // Round factor to nearest integer
-    factor = roundf(factor);
+    else if (factor < 1)
+        factor = 0.5;
+    else
+        factor = roundf(factor);
 
     // Rounds any decimal to a quarter
     // float factorRemainder = fmodf(factor, 1.0);
@@ -84,8 +87,19 @@ int main(int argc, char *argv[])
     // Change the width and height of image by factor, round down to nearest integer
     // tempInfoHeader.biWidth = floor(tempInfoHeader.biWidth * factor);
     // tempInfoHeader.biHeight = floor(tempInfoHeader.biHeight * factor);
-    tempInfoHeader.biWidth *= factor;
-    tempInfoHeader.biHeight *= factor;
+
+
+    // Round width and height if factor is less than 1
+    if (factor == 0.5)
+    {
+        tempInfoHeader.biWidth = round(tempInfoHeader.biWidth * factor);
+        tempInfoHeader.biHeight = round(tempInfoHeader.biHeight * factor);
+    }
+    else
+    {
+        tempInfoHeader.biWidth *= factor;
+        tempInfoHeader.biHeight *= factor;
+    }
 
     // Determine padding for scanlines
     int oldPadding = (4 - (infoHeader.biWidth * sizeof(RGBTRIPLE)) % 4) % 4;
@@ -101,10 +115,10 @@ int main(int argc, char *argv[])
     // write outfile's BITMAPINFOHEADER
     fwrite(&tempInfoHeader, sizeof(BITMAPINFOHEADER), 1, outptr);
 
-    // iterate over original infile's scanlines
+    // Iterate over original infile's scanlines
     for (int i = 0, biHeight = abs(infoHeader.biHeight); i < biHeight; i++)
     {
-        // Array used to hold a scanline of pixels
+        // Array used to hold a new scanline of pixels
         RGBTRIPLE scanlineArray[tempInfoHeader.biWidth - newPadding];
 
         int scanlineArrayIndex = 0;
@@ -118,11 +132,25 @@ int main(int argc, char *argv[])
             // read RGB triple from infile
             fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
 
-            // Write the pixel factor times into array
+            bool addToArray = true;
+
+            // Write the pixel factor times into new scanline array
             for (int k = 0; k < factor; k++)
             {
-                scanlineArray[scanlineArrayIndex] = triple;
-                scanlineArrayIndex += 1;
+                // Only add the even number pixels if factor is 0.5
+                if (factor == 0.5)
+                {
+                    if (pixel % 2 != 0)
+                    {
+                        addToArray = false;
+                    }
+                }
+
+                if (addToArray)
+                {
+                    scanlineArray[scanlineArrayIndex] = triple;
+                    scanlineArrayIndex += 1;
+                }
             }
         }
 
@@ -158,16 +186,16 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-float roundDecimal(float factorDecimal)
-{
-    if (factorDecimal > 0.75)
-        return 1.0;
-    else if (factorDecimal > 0.5)
-        return 0.75;
-    else if (factorDecimal > 0.25)
-        return 0.50;
-    else if (factorDecimal > 0)
-        return 0.25;
-    else
-        return 0;
-}
+// float roundDecimal(float factorDecimal)
+// {
+//     if (factorDecimal > 0.75)
+//         return 1.0;
+//     else if (factorDecimal > 0.5)
+//         return 0.75;
+//     else if (factorDecimal > 0.25)
+//         return 0.50;
+//     else if (factorDecimal > 0)
+//         return 0.25;
+//     else
+//         return 0;
+// }
