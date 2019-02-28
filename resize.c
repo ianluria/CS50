@@ -128,9 +128,11 @@ int main(int argc, char *argv[])
         for (int j = 0; j < factor; j++)
         {
             // write each pixel from scanlineArray to output
-            for (size_t j = 0, size_t len = sizeof(scanlineArray) / sizeof(scanlineArray[0]); j < len; j++)
+            for (size_t k = 0, len = sizeof(scanlineArray) / sizeof(scanlineArray[0]); k < len; k++)
             {
-                fwrite(scanlineArray[j], sizeof(RGBTRIPLE), 1, outptr);
+                const RGBTRIPLE *pixel = &scanlineArray[k];
+
+                fwrite(pixel, sizeof(RGBTRIPLE), 1, outptr);
             }
 
             // Add newPadding
