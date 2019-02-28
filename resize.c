@@ -88,7 +88,6 @@ int main(int argc, char *argv[])
     // tempInfoHeader.biWidth = floor(tempInfoHeader.biWidth * factor);
     // tempInfoHeader.biHeight = floor(tempInfoHeader.biHeight * factor);
 
-
     // Round width and height if factor is less than 1
     if (factor == 0.5)
     {
