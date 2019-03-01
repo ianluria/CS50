@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdbool.h>
 
 #include "bmp.h"
 
@@ -118,7 +119,7 @@ int main(int argc, char *argv[])
     for (int i = 0, biHeight = abs(infoHeader.biHeight); i < biHeight; i++)
     {
         // Array used to hold a new scanline of pixels
-        RGBTRIPLE scanlineArray[tempInfoHeader.biWidth - newPadding];
+        RGBTRIPLE scanlineArray[tempInfoHeader.biWidth];
 
         int scanlineArrayIndex = 0;
 
@@ -127,28 +128,38 @@ int main(int argc, char *argv[])
         {
             // temporary storage
             RGBTRIPLE triple;
+            RGBTRIPLE evenTriple;
 
             // read RGB triple from infile
             fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
 
-            bool addToArray = true;
-
             // Write the pixel factor times into new scanline array
             for (int k = 0; k < factor; k++)
             {
-                // Only add the even number pixels if factor is 0.5
+                bool addPixel = true;
+
                 if (factor == 0.5)
                 {
-                    if (pixel % 2 != 0)
+                    if ((pixel + 1) % 2 == 0)
                     {
-                        addToArray = false;
+                        evenTriple = triple;
+                        addPixel = false;
+                    }
+                    // Do not average pixel colors if it is the first pixel in the scanline, just add it directly to array
+                    else if (pixel + 1 != 1)
+                    {
+                        // Average the color of the pixel before the current pixel and the current pixel
+                        triple.rgbtBlue = (evenTriple.rgbtBlue + triple.rgbtBlue) / 2;
+                        triple.rgbtGreen = (evenTriple.rgbtGreen + triple.rgbtGreen) / 2;
+                        triple.rgbtRed = (evenTriple.rgbtRed + triple.rgbtRed) / 2;
                     }
                 }
 
-                if (addToArray)
+                if (addPixel)
                 {
-                    scanlineArray[scanlineArrayIndex] = triple;
-                    scanlineArrayIndex += 1;
+                // Add triple into the array
+                scanlineArray[scanlineArrayIndex] = triple;
+                scanlineArrayIndex += 1;
                 }
             }
         }
