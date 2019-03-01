@@ -7,8 +7,6 @@
 
 #include "bmp.h"
 
-//float roundDecimal(float factorDecimal);
-
 int main(int argc, char *argv[])
 {
     // ensure proper usage
@@ -18,7 +16,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Get floating point number for f
+    // Get floating point number for factor
     float factor = 0;
     sscanf(argv[1], "%f", &factor);
 
@@ -29,14 +27,10 @@ int main(int argc, char *argv[])
         factor = 1;
     else if (factor < 1)
         factor = 0.5;
+    else if (factor > 100.0)
+        factor = 100.0;
     else
         factor = roundf(factor);
-
-    // Rounds any decimal to a quarter
-    // float factorRemainder = fmodf(factor, 1.0);
-    // float factorDecimal = roundDecimal(factorRemainder);
-    // int factorInt = factor - (factorRemainder);
-    // factor = factorInt + factorDecimal;
 
     // remember filenames
     char *infile = argv[2];
@@ -85,10 +79,6 @@ int main(int argc, char *argv[])
     BITMAPINFOHEADER tempInfoHeader;
     tempInfoHeader = infoHeader;
 
-    // Change the width and height of image by factor, round down to nearest integer
-    // tempInfoHeader.biWidth = floor(tempInfoHeader.biWidth * factor);
-    // tempInfoHeader.biHeight = floor(tempInfoHeader.biHeight * factor);
-
     // Round width and height if factor is less than 1
     if (factor == 0.5)
     {
@@ -116,7 +106,7 @@ int main(int argc, char *argv[])
     fwrite(&tempInfoHeader, sizeof(BITMAPINFOHEADER), 1, outptr);
 
     // Iterate over original infile's scanlines
-    for (int i = 0, biHeight = abs(infoHeader.biHeight); i < biHeight; i++)
+    for (int scanline = 0, biHeight = abs(infoHeader.biHeight); scanline < biHeight; scanline++)
     {
         // Array used to hold a new scanline of pixels
         RGBTRIPLE scanlineArray[tempInfoHeader.biWidth];
@@ -167,9 +157,53 @@ int main(int argc, char *argv[])
         // skip over padding in original file, if any
         fseek(inptr, oldPadding, SEEK_CUR);
 
+        RGBTRIPLE evenScanlineArray[tempInfoHeader.biWidth];
+
         // Write a new scanline by factor to output
         for (int j = 0; j < factor; j++)
         {
+             bool writeToFile = true;
+
+            if (factor == 0.5)
+            {
+                if ((scanline + 1) % 2 == 0)
+                {
+                    
+                    memcopy(evenScanlineArray, scanlineArray, sizeof(RGBTRIPLE) * tempInfoHeader.biwidth);
+                    writeToFile = false;
+                }
+                else if (scanline + 1 != 1)
+                {
+                    
+                    for (size_t k = 0, len = sizeof(scanlineArray) / sizeof(scanlineArray[0]); k < len; k+)
+                    {
+                        scanlineArray[k] = triple;
+                        evenScanlineArray[k] = evenTriple;
+
+                        triple.rgbtBlue = (evenTriple.rgbtBlue + triple.rgbtBlue) / 2;
+                        triple.rgbtGreen = (evenTriple.rgbtGreen + triple.rgbtGreen) / 2;
+                        triple.rgbtRed = (evenTriple.rgbtRed + triple.rgbtRed) / 2;
+                    }
+
+
+                    //for each pixel in evanScanlineArray
+                    //match it with pixel in scanlineArray
+                    // average the colors and store it back in scanlineArray
+                }
+
+
+
+
+
+            }
+            //if factor is 0.5
+            //If first line, write to file
+            //If even numbered line, store to temporary storage and do not write to file
+            //If odd numbered line, average each pixel from even with odd and add averaged pixels to an array 
+
+
+
+
             // write each pixel from scanlineArray to output
             for (size_t k = 0, len = sizeof(scanlineArray) / sizeof(scanlineArray[0]); k < len; k++)
             {
@@ -195,17 +229,3 @@ int main(int argc, char *argv[])
     // success
     return 0;
 }
-
-// float roundDecimal(float factorDecimal)
-// {
-//     if (factorDecimal > 0.75)
-//         return 1.0;
-//     else if (factorDecimal > 0.5)
-//         return 0.75;
-//     else if (factorDecimal > 0.25)
-//         return 0.50;
-//     else if (factorDecimal > 0)
-//         return 0.25;
-//     else
-//         return 0;
-// }
