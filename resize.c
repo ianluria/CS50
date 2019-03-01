@@ -147,9 +147,9 @@ int main(int argc, char *argv[])
 
                 if (addPixel)
                 {
-                // Add triple into the array
-                scanlineArray[scanlineArrayIndex] = triple;
-                scanlineArrayIndex += 1;
+                    // Add triple into the array
+                    scanlineArray[scanlineArrayIndex] = triple;
+                    scanlineArrayIndex += 1;
                 }
             }
         }
@@ -162,20 +162,20 @@ int main(int argc, char *argv[])
         // Write a new scanline by factor to output
         for (int j = 0; j < factor; j++)
         {
-             bool writeToFile = true;
+            bool writeToFile = true;
 
             if (factor == 0.5)
             {
                 if ((scanline + 1) % 2 == 0)
                 {
-                    
+
                     memcopy(evenScanlineArray, scanlineArray, sizeof(RGBTRIPLE) * tempInfoHeader.biwidth);
                     writeToFile = false;
                 }
                 else if (scanline + 1 != 1)
                 {
-                    
-                    for (size_t k = 0, len = sizeof(scanlineArray) / sizeof(scanlineArray[0]); k < len; k+)
+
+                    for (size_t k = 0, len = sizeof(scanlineArray) / sizeof(scanlineArray[0]); k < len; k +)
                     {
                         scanlineArray[k] = triple;
                         evenScanlineArray[k] = evenTriple;
@@ -185,24 +185,15 @@ int main(int argc, char *argv[])
                         triple.rgbtRed = (evenTriple.rgbtRed + triple.rgbtRed) / 2;
                     }
 
-
                     //for each pixel in evanScanlineArray
                     //match it with pixel in scanlineArray
                     // average the colors and store it back in scanlineArray
                 }
-
-
-
-
-
             }
             //if factor is 0.5
             //If first line, write to file
             //If even numbered line, store to temporary storage and do not write to file
-            //If odd numbered line, average each pixel from even with odd and add averaged pixels to an array 
-
-
-
+            //If odd numbered line, average each pixel from even with odd and add averaged pixels to an array
 
             // write each pixel from scanlineArray to output
             for (size_t k = 0, len = sizeof(scanlineArray) / sizeof(scanlineArray[0]); k < len; k++)
