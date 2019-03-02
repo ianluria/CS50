@@ -5,7 +5,6 @@
 #include <math.h>
 #include <stdbool.h>
 #include <string.h>
-
 #include "bmp.h"
 
 int main(int argc, char *argv[])
@@ -106,27 +105,29 @@ int main(int argc, char *argv[])
     // write outfile's BITMAPINFOHEADER
     fwrite(&tempInfoHeader, sizeof(BITMAPINFOHEADER), 1, outptr);
 
+    // Array used to store the even numbered scanlines when factor is 0.5
     RGBTRIPLE evenScanlineArray[tempInfoHeader.biWidth];
 
     // Iterate over original infile's scanlines
     for (int scanline = 0, biHeight = abs(infoHeader.biHeight); scanline < biHeight; scanline++)
     {
-        // Array used to hold a new scanline of pixels
+        // Array used to hold a new scanline of pixels according to the original width * factor
         RGBTRIPLE scanlineArray[tempInfoHeader.biWidth];
 
         int scanlineArrayIndex = 0;
 
+        RGBTRIPLE evenTriple;
+
         // iterate over pixels in original scanline
         for (int pixel = 0; pixel < infoHeader.biWidth; pixel++)
         {
-            // temporary storage
+            // temporary storage of pixels
             RGBTRIPLE triple;
-            RGBTRIPLE evenTriple;
 
-            // read RGB triple from infile
+            // read pixel from infile
             fread(&triple, sizeof(RGBTRIPLE), 1, inptr);
 
-            // Write the pixel factor times into new scanline array
+            // Add the pixel factor times into new scanline array
             for (int k = 0; k < factor; k++)
             {
                 bool addPixel = true;
@@ -167,6 +168,7 @@ int main(int argc, char *argv[])
 
             if (factor == 0.5)
             {
+                // Don't write even numbered scanlines to the output
                 if ((scanline + 1) % 2 == 0)
                 {
                     memcpy(evenScanlineArray, scanlineArray, sizeof(RGBTRIPLE) * tempInfoHeader.biWidth);
@@ -176,9 +178,6 @@ int main(int argc, char *argv[])
                 {
                     for (size_t k = 0, len = sizeof(scanlineArray) / sizeof(scanlineArray[0]); k < len; k++)
                     {
-                        // scanlineArray[k] = triple;
-                        // evenScanlineArray[k] = evenTriple;
-
                         RGBTRIPLE triple = scanlineArray[k];
                         RGBTRIPLE evenTriple = evenScanlineArray[k];
 
@@ -195,11 +194,10 @@ int main(int argc, char *argv[])
                 for (size_t k = 0, len = sizeof(scanlineArray) / sizeof(scanlineArray[0]); k < len; k++)
                 {
                     const RGBTRIPLE *pixel = &scanlineArray[k];
-
                     fwrite(pixel, sizeof(RGBTRIPLE), 1, outptr);
                 }
 
-                // Add newPadding
+                // Add newPadding at the end
                 for (int k = 0; k < newPadding; k++)
                 {
                     fputc(0x00, outptr);
