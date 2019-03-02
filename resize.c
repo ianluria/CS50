@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "bmp.h"
 
@@ -105,6 +106,8 @@ int main(int argc, char *argv[])
     // write outfile's BITMAPINFOHEADER
     fwrite(&tempInfoHeader, sizeof(BITMAPINFOHEADER), 1, outptr);
 
+    RGBTRIPLE evenScanlineArray[tempInfoHeader.biWidth];
+
     // Iterate over original infile's scanlines
     for (int scanline = 0, biHeight = abs(infoHeader.biHeight); scanline < biHeight; scanline++)
     {
@@ -157,8 +160,6 @@ int main(int argc, char *argv[])
         // skip over padding in original file, if any
         fseek(inptr, oldPadding, SEEK_CUR);
 
-        RGBTRIPLE evenScanlineArray[tempInfoHeader.biWidth];
-
         // Write new scanlines by factor to output
         for (int j = 0; j < factor; j++)
         {
@@ -168,16 +169,18 @@ int main(int argc, char *argv[])
             {
                 if ((scanline + 1) % 2 == 0)
                 {
-                    memcopy(evenScanlineArray, scanlineArray, sizeof(RGBTRIPLE) * tempInfoHeader.biwidth);
+                    memcpy(evenScanlineArray, scanlineArray, sizeof(RGBTRIPLE) * tempInfoHeader.biWidth);
                     writeToFile = false;
                 }
                 else if (scanline + 1 != 1)
                 {
-
-                    for (size_t k = 0, len = sizeof(scanlineArray) / sizeof(scanlineArray[0]); k < len; k +)
+                    for (size_t k = 0, len = sizeof(scanlineArray) / sizeof(scanlineArray[0]); k < len; k++)
                     {
-                        scanlineArray[k] = triple;
-                        evenScanlineArray[k] = evenTriple;
+                        // scanlineArray[k] = triple;
+                        // evenScanlineArray[k] = evenTriple;
+
+                        RGBTRIPLE triple = scanlineArray[k];
+                        RGBTRIPLE evenTriple = evenScanlineArray[k];
 
                         triple.rgbtBlue = (evenTriple.rgbtBlue + triple.rgbtBlue) / 2;
                         triple.rgbtGreen = (evenTriple.rgbtGreen + triple.rgbtGreen) / 2;
@@ -186,18 +189,21 @@ int main(int argc, char *argv[])
                 }
             }
 
-            // write each pixel from scanlineArray to output
-            for (size_t k = 0, len = sizeof(scanlineArray) / sizeof(scanlineArray[0]); k < len; k++)
+            if (writeToFile)
             {
-                const RGBTRIPLE *pixel = &scanlineArray[k];
+                // write each pixel from scanlineArray to output
+                for (size_t k = 0, len = sizeof(scanlineArray) / sizeof(scanlineArray[0]); k < len; k++)
+                {
+                    const RGBTRIPLE *pixel = &scanlineArray[k];
 
-                fwrite(pixel, sizeof(RGBTRIPLE), 1, outptr);
-            }
+                    fwrite(pixel, sizeof(RGBTRIPLE), 1, outptr);
+                }
 
-            // Add newPadding
-            for (int k = 0; k < newPadding; k++)
-            {
-                fputc(0x00, outptr);
+                // Add newPadding
+                for (int k = 0; k < newPadding; k++)
+                {
+                    fputc(0x00, outptr);
+                }
             }
         }
     }
