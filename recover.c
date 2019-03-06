@@ -39,6 +39,7 @@ int main(int argc, char *argv[])
         FindJPEG(&jpeg);
 
         if (jpeg.jpegArray[0] == 0){
+            // End of file reached
             nextJpegBlock = false;
         }
         else
@@ -58,6 +59,16 @@ int main(int argc, char *argv[])
 
     // if 512 block is less than 512 bytes, return false -- end of file
 }
+
+
+
+
+
+
+
+
+
+
 
 void function FindJPEG(JpegStorage jpegArrayPointer)
 {
