@@ -11,6 +11,8 @@ typedef struct
     BYTE jpegArray[512];
 } JpegStorage;
 
+bool function findJPEG(JpegStorage *jpegStoragePointer, int counter, FILE *inptr);
+
 int main(int argc, char *argv[])
 {
     // ensure proper usage
@@ -38,33 +40,33 @@ int main(int argc, char *argv[])
     {
         JpegStorage jpeg;
 
-        bool foundJPEG = findJPEG(&jpeg, 0);
+        bool foundJPEG = findJPEG(&jpeg, 0, inptr);
 
         if (foundJPEG)
         {
-            //write jpegArray into new file
             sprintf(jpegFilename, "%03i.jpg", newJpegCounter);
+
+            newJpegCounter += 1;
+
+            FILE *jpegImg = fopen(jpegFilename, "w");
+
+            fwrite(&jpeg->jpegArray, sizeof(jpeg.jpegArray), 1, jpegImg);
+
+            fclose(jpegImg);
         }
         else
         {
-            //write jpegArray into new file
             // End of file reached
             nextJpegBlock = false;
         }
     }
 
+    fclose(inptr);
+
     return 0;
-
-    //while input has another 512 byte block
-
-    // read bytes until a jpeg signature is found
-    // write 512 bytes into a new jpg file
-    // advance 512 bytes in input
-
-    // if 512 block is less than 512 bytes, return false -- end of file
 }
 
-bool function findJPEG(JpegStorage *jpegStoragePointer, int counter)
+bool function findJPEG(JpegStorage *jpegStoragePointer, int counter, FILE *inptr)
 {
     BYTE testByte;
 
@@ -86,7 +88,7 @@ bool function findJPEG(JpegStorage *jpegStoragePointer, int counter)
             //go back 4 spaces to the beginning of jpeg and add 512 bytes to array
             fseek(inptr, -4, SEEK_CUR);
 
-            size_t success = fread(jpegStoragePointer->jpegArray, sizeof(JpegStorage), 1, inptr);
+            size_t success = fread(jpegStoragePointer->jpegArray, sizeof(JpegStorage.jpegArray), 1, inptr);
 
             if (success < 512)
             {
@@ -100,7 +102,7 @@ bool function findJPEG(JpegStorage *jpegStoragePointer, int counter)
     {
         counter += 1;
 
-        findJPEG(jpegStoragePointer, counter);
+        findJPEG(jpegStoragePointer, counter, inptr);
     }
 
     if (counter > 0)
@@ -111,5 +113,5 @@ bool function findJPEG(JpegStorage *jpegStoragePointer, int counter)
         fseek(inptr, negativeCounter, SEEK_CUR);
     }
 
-    findJPEG(jpegStoragePointer, 0);
+    findJPEG(jpegStoragePointer, 0, inptr);
 }
