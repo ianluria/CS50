@@ -4,14 +4,14 @@
 #include <stdbool.h>
 #include <string.h>
 
-typedef uint8_t BYTE;
+typedef char BYTE;
 typedef struct
 {
     // Array of 512 bytes used to store a full jpeg
     BYTE jpegArray[512];
 } JpegStorage;
 
-bool function findJPEG(JpegStorage *jpegStoragePointer, int counter, FILE *inptr);
+bool findJPEG(JpegStorage *jpegStoragePointer, int counter, FILE *inptr);
 
 int main(int argc, char *argv[])
 {
@@ -50,7 +50,13 @@ int main(int argc, char *argv[])
 
             FILE *jpegImg = fopen(jpegFilename, "w");
 
-            fwrite(&jpeg->jpegArray, sizeof(jpeg.jpegArray), 1, jpegImg);
+            //jpegs can take up for than one block 
+            //test first bytes of sequential block for jpeg signature 
+            //if no signature is found, add it on block before
+            //keep testing until a new signature is found, or end of file is reached 
+            //write complete jpeg to new file 
+            
+            fwrite(jpeg.jpegArray, sizeof(jpeg.jpegArray), 1, jpegImg);
 
             fclose(jpegImg);
         }
@@ -66,12 +72,13 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-bool function findJPEG(JpegStorage *jpegStoragePointer, int counter, FILE *inptr)
+bool findJPEG(JpegStorage *jpegStoragePointer, int counter, FILE *inptr)
 {
     BYTE testByte;
 
     const int JPEGSIGNATUREBYTES[] = {255, 216, 255};
 
+//WORK ON THIS!
     size_t read = fread(&testByte, sizeof(BYTE), 1, inptr);
 
     // End of file or error reached while reading the next byte from file
@@ -83,12 +90,12 @@ bool function findJPEG(JpegStorage *jpegStoragePointer, int counter, FILE *inptr
     // End of JPEGSIGNATUREBYTES array reached
     if (counter == 3)
     {
-        if (testByte & 240 == 224)
+        if ((testByte & 240) == 224)
         {
             //go back 4 spaces to the beginning of jpeg and add 512 bytes to array
             fseek(inptr, -4, SEEK_CUR);
 
-            size_t success = fread(jpegStoragePointer->jpegArray, sizeof(JpegStorage.jpegArray), 1, inptr);
+            size_t success = fread(jpegStoragePointer->jpegArray, sizeof(jpegStoragePointer->jpegArray), 1, inptr);
 
             if (success < 512)
             {
@@ -114,4 +121,6 @@ bool function findJPEG(JpegStorage *jpegStoragePointer, int counter, FILE *inptr
     }
 
     findJPEG(jpegStoragePointer, 0, inptr);
+
+    return false;
 }
