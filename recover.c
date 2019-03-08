@@ -50,12 +50,12 @@ int main(int argc, char *argv[])
 
             FILE *jpegImg = fopen(jpegFilename, "w");
 
-            //jpegs can take up for than one block 
-            //test first bytes of sequential block for jpeg signature 
+            //jpegs can take up for than one block
+            //test first bytes of sequential block for jpeg signature
             //if no signature is found, add it on block before
-            //keep testing until a new signature is found, or end of file is reached 
-            //write complete jpeg to new file 
-            
+            //keep testing until a new signature is found, or end of file is reached
+            //write complete jpeg to new file
+
             fwrite(jpeg.jpegArray, sizeof(jpeg.jpegArray), 1, jpegImg);
 
             fclose(jpegImg);
@@ -78,13 +78,15 @@ bool findJPEG(JpegStorage *jpegStoragePointer, int counter, FILE *inptr)
 
     const int JPEGSIGNATUREBYTES[] = {255, 216, 255};
 
-//WORK ON THIS!
-    size_t read = fread(&testByte, sizeof(BYTE), 1, inptr);
-
-    // End of file or error reached while reading the next byte from file
-    if (read == 0)
+    while (testByte == 0)
     {
-        return false;
+        size_t read = fread(&testByte, sizeof(BYTE), 1, inptr);
+
+        // End of file or error reached while reading the next byte from file
+        if (read == 0)
+        {
+            return false;
+        }
     }
 
     // End of JPEGSIGNATUREBYTES array reached
