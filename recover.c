@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-bool findJPEG(JpegStorage *jpegStoragePointer, int counter, FILE *inptr)
+bool findJPEG(int *jpegBlockCounter, int counter, FILE *inptr)
 {
     BYTE testByte;
 
@@ -97,13 +97,20 @@ bool findJPEG(JpegStorage *jpegStoragePointer, int counter, FILE *inptr)
             //go back 4 spaces to the beginning of jpeg and add 512 bytes to array
             fseek(inptr, -4, SEEK_CUR);
 
-            size_t success = fread(jpegStoragePointer->jpegArray, sizeof(jpegStoragePointer->jpegArray), 1, inptr);
+            *jpegBlockCounter = 1;
 
-            if (success < 512)
+            bool anotherBlock = true;
+
+            while (anotherBlock)
             {
-                // The bytes read were less than 512, which means end of file was reached
-                return false;
+                fseek(inptr, 512, SEEK_CUR);
+
+                //seek to end of block
+                //check if block signautre is present
+                //if so, increment blockcounter
+                //else end function and return to main
             }
+
             return true;
         }
     }
@@ -126,3 +133,24 @@ bool findJPEG(JpegStorage *jpegStoragePointer, int counter, FILE *inptr)
 
     return false;
 }
+
+//Given the current location in file, check if the next four bytes are a jpeg signature
+
+
+
+
+
+
+
+
+
+
+
+
+// size_t success = fread(jpegStoragePointer->jpegArray, sizeof(jpegStoragePointer->jpegArray), 1, inptr);
+
+//             if (success < 512)
+//             {
+//                 // The bytes read were less than 512, which means end of file was reached
+//                 return false;
+//             }
