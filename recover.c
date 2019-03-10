@@ -12,6 +12,7 @@ typedef struct
 } JpegStorage;
 
 bool findJPEG(JpegStorage *jpegStoragePointer, int counter, FILE *inptr);
+int testForJPEGSignature(int index, FILE *inptr, int *rewindCounter);
 
 int main(int argc, char *argv[])
 {
@@ -34,13 +35,14 @@ int main(int argc, char *argv[])
 
     bool nextJpegBlock = true;
     int newJpegCounter = 0;
+    int jpegBlockCounter = 0;
     char jpegFilename[8];
 
     while (nextJpegBlock)
     {
         JpegStorage jpeg;
 
-        bool foundJPEG = findJPEG(&jpeg, 0, inptr);
+        bool foundJPEG = findJPEG(&jpegBlockCounter, inptr);
 
         if (foundJPEG)
         {
@@ -56,7 +58,9 @@ int main(int argc, char *argv[])
             //keep testing until a new signature is found, or end of file is reached
             //write complete jpeg to new file
 
-            fwrite(jpeg.jpegArray, sizeof(jpeg.jpegArray), 1, jpegImg);
+            fwrite(jpeg.jpegArray, sizeof(jpeg.jpegArray), *jpegBlockCounter, jpegImg);
+
+            *jpegBlockCounter = 0;
 
             fclose(jpegImg);
         }
@@ -72,15 +76,29 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-bool findJPEG(int *jpegBlockCounter, int counter, FILE *inptr)
+bool findJPEG(int *jpegBlockCounter, FILE *inptr)
 {
     BYTE testByte;
 
     //bool foundJPEG = true;
 
-    
+    // Only look for non-zero byte if function is not currently processing an existing jpeg
+    if (*jpegBlockCounter == 0)
+    {
+        // Read through file until a non-zero byte is found
+        while (testByte == 0)
+        {
+            size_t read = fread(&testByte, sizeof(BYTE), 1, inptr);
 
-    while (testByte == 0)
+            // End of file or error reached while reading the next byte from file
+            if (read == 0)
+            {
+                return false;
+            }
+        }
+    }
+    // Else, just test the first byte for a signature.
+    else
     {
         size_t read = fread(&testByte, sizeof(BYTE), 1, inptr);
 
@@ -91,154 +109,109 @@ bool findJPEG(int *jpegBlockCounter, int counter, FILE *inptr)
         }
     }
 
-        //advanced to a non-zero testByte
+    // Test testByte for signature
+    int signatureFound = testForJPEGSignature(testByte, 0, *inptr, *rewindCounter);
 
-        bool signatureFound = testForJPEGSignature(0, *inptr);
+    // Reached end of file or error
+    if (signatureFound == 0)
+    {
+        return false;
+    }
+    // Signature found!
+    else if (signatureFound == 2)
+    {
 
-       
+        *jpegBlockCounter += 1;
 
-        if (signatureFound)
+        // Move forward 512 bytes in file
+        int seek = fseek(inptr, 512, SEEK_CUR);
+
+        // End of file or error
+        if (seek < 0)
         {
-
-            
-             fseek(inptr, -4, SEEK_CUR);
-
+            return false;
         }
 
-        bool nextBlock = true;
-
-
-        while (nextBlock)
-        {
-            if (testForJPEGSignature(0, *inptr))
-            {   
-                //fseek back to beginning of block
-                nextBlock = false;
-            }
-            else
-            {
-                //fseek back to beginning of block
-                //read 512
-            }
-            
-
-
-
-
-        }
-
-        //check to see if the next block begins with a signature
-        //if it does, stop
-        //else, advance block count
-
-
- //fread
-            fseek(inptr, 512, SEEK_CUR);
-*jpegBlockCounter += 1;
-
-        //test if next block begins with signature
-
-        bool anotherBlock = true;
-
-        while (anotherBlock)
-        {
-           if (testForJPEGSignature(0, *inptr))
-           {
-            
-           }
-
-            //need to change these to fread and not fseek
-
-           else
-           {
-            *jpegBlockCounter += 1;
-
-            fseek(inptr, -4, SEEK_CUR);
-           
-           //fread
-            fseek(inptr, 512, SEEK_CUR);
-           }
-           
-
-            //seek to end of block
-            //check if block signautre is present
-            //if so, increment blockcounter
-            //else end function and return to main
-        }
+        findJPEG(jpegBlockCounter, inptr);
 
         return true;
+        // Run findJPEG again to see if next block is part of same jpeg
     }
-}
-else if (testByte == JPEGSIGNATUREBYTES[counter])
-{
-    counter += 1;
+    else if (signatureFound == 1)
+    {
+        // Return true if at least one block was found
+        if (*jpegBlockCounter == 0)
+        {
+            return true;
+        }
 
-    findJPEG(jpegStoragePointer, counter, inptr);
-}
+        // Run function again for next byte
+        findJPEG(jpegBlockCounter, inptr);
+    }
 
-if (counter > 0)
-{
-    int negativeCounter = counter * -1;
-
-    // Go back in file negativeCounter spaces
-    fseek(inptr, negativeCounter, SEEK_CUR);
-}
-
-findJPEG(jpegStoragePointer, 0, inptr);
-
-return false;
+    return false;
 }
 
 //Given the current location in file, check if the next four bytes are a jpeg signature
+//Returns 0 for end of file or read error
+//Returns 1 for byte does not match signature
+//Returns 2 for complete signature found
 
-//NEED TO ADD ERROR CHECKING FOR FREAD!!!!!!!!!!
-
-bool testForJPEGSignature(int index, FILE *inptr)
+int testForJPEGSignature(BYTE testByte, int index, FILE *inptr, int *rewindCounter)
 {
     const int JPEGSIGNATUREBYTES[] = {255, 216, 255};
 
-    BYTE testByte;
+    // Test the parameter testByte before testing a byte from file
+    if (index > 0)
+    {
 
-    size_t read = fread(&testByte, sizeof(BYTE), 1, inptr);
+        size_t read = fread(&testByte, sizeof(BYTE), 1, inptr);
 
+        // End of file or error reached while reading the next byte from file
+        if (read == 0)
+        {
+            return 0;
+        }
+    }
+
+    // Passed last index in JPEGSIGNATUREBYTES
     if (index == 3)
     {
+        // Complete match of signature
         if ((testByte & 240) == 224)
         {
-
-            return true;
+            *rewindCounter = 4;
+            return 2;
         }
         else
         {
-            return false;
+            *rewindCounter += 1;
+            return 1;
         }
     }
 
     if (testByte == JPEGSIGNATUREBYTES[index])
     {
-        index += 1;
-        bool foundNextSignatureByte = testForJPEGSignature(index, inptr);
 
-        if (foundNextSignatureByte)
+        // Tally how many bytes need to be rewound
+        if (index > 0)
         {
-            return true;
+            *rewindCounter += 1;
         }
-        else
+
+        index += 1;
+
+        int foundNextSignatureByte = testForJPEGSignature(testByte, index, inptr, rewindCounter);
+
+        if (foundNextSignatureByte == 2)
         {
-            return false;
+            return 2;
+        }
+        else if (foundNextSignatureByte == 0)
+        {
+            return 0;
         }
     }
 
-    // Go back in file and try again
-    fseek(inptr, (index * -1), SEEK_CUR);
-    
-    return false;
+    return 1;
 }
-
-// size_t success = fread(jpegStoragePointer->jpegArray, sizeof(jpegStoragePointer->jpegArray), 1, inptr);
-
-//             if (success < 512)
-//             {
-//                 // The bytes read were less than 512, which means end of file was reached
-//                 return false;
-//             }
