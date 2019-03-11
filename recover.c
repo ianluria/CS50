@@ -6,8 +6,8 @@
 
 typedef char BYTE;
 
-bool findJPEG(int counter, FILE *inptr);
-int testForJPEGSignature(int index, FILE *inptr, int *rewindCounter);
+bool findJPEG(int *counter, FILE *inptr);
+int testForJPEGSignature(BYTE testByte, int index, FILE *inptr, int *rewindCounter);
 
 int main(int argc, char *argv[])
 {
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 
 bool findJPEG(int *jpegBlockCounter, FILE *inptr)
 {
-    BYTE testByte;
+    BYTE testByte = 0;
     int rewindCounter = 0;
 
     // Only look for non-zero byte if function is not currently processing an existing jpeg
@@ -105,6 +105,7 @@ bool findJPEG(int *jpegBlockCounter, FILE *inptr)
     // Test testByte for signature
     int signatureFound = testForJPEGSignature(testByte, 0, inptr, &rewindCounter);
 
+    
     // Reached end of file or error
     if (signatureFound == 0)
     {
