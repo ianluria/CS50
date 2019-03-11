@@ -46,13 +46,24 @@ int main(int argc, char *argv[])
 
             FILE *jpegImg = fopen(jpegFilename, "w");
 
+            if (jpegImg == NULL)
+            {
+                fprintf(stderr, "Could not open jpeg.\n");
+                return 2;
+            }
+
             //jpegs can take up for than one block
             //test first bytes of sequential block for jpeg signature
             //if no signature is found, add it on block before
             //keep testing until a new signature is found, or end of file is reached
             //write complete jpeg to new file
 
-            fwrite(inptr, 512, jpegBlockCounter, jpegImg);
+            int writeCount = fwrite(inptr, 512, jpegBlockCounter, jpegImg);
+
+            if (writeCount < 512)
+            {
+                return 2;
+            }
 
             jpegBlockCounter = 0;
 
@@ -72,6 +83,8 @@ int main(int argc, char *argv[])
 
 bool findJPEG(int *jpegBlockCounter, FILE *inptr)
 {
+
+    
     BYTE testByte = 0;
     int rewindCounter = 0;
 
@@ -105,7 +118,6 @@ bool findJPEG(int *jpegBlockCounter, FILE *inptr)
     // Test testByte for signature
     int signatureFound = testForJPEGSignature(testByte, 0, inptr, &rewindCounter);
 
-    
     // Reached end of file or error
     if (signatureFound == 0)
     {
