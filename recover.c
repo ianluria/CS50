@@ -6,8 +6,6 @@
 
 typedef char BYTE;
 
-// get rid of this
-
 bool findJPEG(int counter, FILE *inptr);
 int testForJPEGSignature(int index, FILE *inptr, int *rewindCounter);
 
@@ -54,11 +52,9 @@ int main(int argc, char *argv[])
             //keep testing until a new signature is found, or end of file is reached
             //write complete jpeg to new file
 
-            //FIX THIS!!!
+            fwrite(inptr, 512, jpegBlockCounter, jpegImg);
 
-            fwrite(, sizeof(jpeg.jpegArray), *jpegBlockCounter, jpegImg);
-
-            *jpegBlockCounter = 0;
+            jpegBlockCounter = 0;
 
             fclose(jpegImg);
         }
@@ -107,7 +103,7 @@ bool findJPEG(int *jpegBlockCounter, FILE *inptr)
     }
 
     // Test testByte for signature
-    int signatureFound = testForJPEGSignature(testByte, 0, *inptr, &rewindCounter);
+    int signatureFound = testForJPEGSignature(testByte, 0, inptr, &rewindCounter);
 
     // Reached end of file or error
     if (signatureFound == 0)
@@ -135,10 +131,10 @@ bool findJPEG(int *jpegBlockCounter, FILE *inptr)
             return false;
         }
 
+        // Run findJPEG again to see if next block is part of same jpeg
         findJPEG(jpegBlockCounter, inptr);
 
         return true;
-        // Run findJPEG again to see if next block is part of same jpeg
     }
     else if (signatureFound == 1)
     {
@@ -148,7 +144,7 @@ bool findJPEG(int *jpegBlockCounter, FILE *inptr)
             return true;
         }
 
-        // Run function again for next byte
+        // Run function again for next byte in inptr
         findJPEG(jpegBlockCounter, inptr);
     }
 
