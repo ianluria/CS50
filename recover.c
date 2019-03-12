@@ -28,6 +28,8 @@ int main(int argc, char *argv[])
         return 2;
     }
 
+    printf("ftell1:  %lu\n", ftell(inptr));
+
     bool nextJpegBlock = true;
     int newJpegCounter = 0;
     int jpegBlockCounter = 0;
@@ -61,6 +63,15 @@ int main(int argc, char *argv[])
 
             int number = 512 * jpegBlockCounter;
 
+            //rewind number bytes in inptr before writing
+            int seek = fseek(inptr, (-1 * number), SEEK_CUR);
+
+            // End of file or error
+            if (seek < 0)
+            {
+                return 5;
+            }
+
             int writeCount = fwrite(inptr, 1, number, jpegImg);
 
             if (writeCount < number)
@@ -81,6 +92,7 @@ int main(int argc, char *argv[])
         {
             // End of file reached
             nextJpegBlock = false;
+            printf("end of file");
         }
     }
 
@@ -140,7 +152,7 @@ bool findJPEG(int *jpegBlockCounter, FILE *inptr)
         }
 
         // If jpegBlockCounter is greater than zero, make sure file rewinds to beginning of block
-        if (jpegBlockCounter > 0)
+        if (*jpegBlockCounter > 0)
         {
             if (rewindCounter < 4)
             {
@@ -151,14 +163,23 @@ bool findJPEG(int *jpegBlockCounter, FILE *inptr)
         //rewind file if found more than one part of signature
         rewindCounter *= -1;
 
-        fseek(inptr, rewindCounter, SEEK_CUR);
+        int rewindSeek = fseek(inptr, rewindCounter, SEEK_CUR);
+
+        // End of file or error
+        if (rewindSeek < 0)
+        {
+            return 5;
+        }
 
         // Signature found!
         if (signatureFound == 2)
         {
+            //printf("ftell3:  %lu\n", ftell(inptr));
+
             // Return true if a new jpeg signature was found while processing an existing jpeg
             if (*jpegBlockCounter > 0)
             {
+
                 return true;
             }
 
@@ -172,6 +193,7 @@ bool findJPEG(int *jpegBlockCounter, FILE *inptr)
             {
                 return false;
             }
+            printf("ftell from sigFound = 2:  %lu\n", ftell(inptr));
         }
         else if (signatureFound == 1)
         {
@@ -186,6 +208,10 @@ bool findJPEG(int *jpegBlockCounter, FILE *inptr)
                 {
                     return false;
                 }
+
+                printf("ftell from sigFound = 1:  %lu\n", ftell(inptr));
+
+                *jpegBlockCounter += 1;
             }
         }
     }
