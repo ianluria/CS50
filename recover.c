@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-typedef char BYTE;
+typedef unsigned char BYTE;
 
 bool findJPEG(int *counter, FILE *inptr);
 int testForJPEGSignature(BYTE testByte, int index, FILE *inptr, int *rewindCounter);
@@ -41,6 +41,8 @@ int main(int argc, char *argv[])
         {
             sprintf(jpegFilename, "%03i.jpg", newJpegCounter);
 
+            printf("jpeg: %i\n", newJpegCounter);
+
             newJpegCounter += 1;
 
             FILE *jpegImg = fopen(jpegFilename, "w");
@@ -57,16 +59,23 @@ int main(int argc, char *argv[])
             //keep testing until a new signature is found, or end of file is reached
             //write complete jpeg to new file
 
-            int writeCount = fwrite(inptr, 512, jpegBlockCounter, jpegImg);
+            int number = 512 * jpegBlockCounter;
 
-            if (writeCount < 512)
+            int writeCount = fwrite(inptr, 1, number, jpegImg);
+
+            if (writeCount < number)
             {
                 return 3;
             }
 
             jpegBlockCounter = 0;
 
-            fclose(jpegImg);
+            int close = fclose(jpegImg);
+
+            if (close != 0)
+            {
+                return 5;
+            }
         }
         else
         {
@@ -75,7 +84,12 @@ int main(int argc, char *argv[])
         }
     }
 
-    fclose(inptr);
+    int inptrClose = fclose(inptr);
+
+    if (inptrClose != 0)
+    {
+        return 5;
+    }
 
     return 0;
 }
@@ -125,7 +139,9 @@ bool findJPEG(int *jpegBlockCounter, FILE *inptr)
             return false;
         }
 
-        //rewind file if found more than one part of signature 
+        //if jpegblockcounter is more than one, rewind back to beginning of block !!!!
+
+        //rewind file if found more than one part of signature
         rewindCounter *= -1;
 
         fseek(inptr, rewindCounter, SEEK_CUR);
@@ -133,6 +149,11 @@ bool findJPEG(int *jpegBlockCounter, FILE *inptr)
         // Signature found!
         if (signatureFound == 2)
         {
+            // Return true if a new jpeg signature was found
+            if (*jpegBlockCounter > 0)
+            {
+                return true;
+            }
 
             *jpegBlockCounter += 1;
 
@@ -147,10 +168,17 @@ bool findJPEG(int *jpegBlockCounter, FILE *inptr)
         }
         else if (signatureFound == 1)
         {
-            // Return true if at least one block was found
+            // Keep incrementing jpegBlockCounter until another jpeg signature is found
             if (*jpegBlockCounter > 0)
             {
-                return true;
+                // Move forward 512 bytes in file to next block
+                int seek = fseek(inptr, 512, SEEK_CUR);
+
+                // End of file or error
+                if (seek < 0)
+                {
+                    return false;
+                }
             }
         }
     }
