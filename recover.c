@@ -139,7 +139,14 @@ bool findJPEG(int *jpegBlockCounter, FILE *inptr)
             return false;
         }
 
-        //if jpegblockcounter is more than one, rewind back to beginning of block !!!!
+        // If jpegBlockCounter is greater than zero, make sure file rewinds to beginning of block
+        if (jpegBlockCounter > 0)
+        {
+            if (rewindCounter < 4)
+            {
+                rewindCounter += 1;
+            }
+        }
 
         //rewind file if found more than one part of signature
         rewindCounter *= -1;
@@ -149,7 +156,7 @@ bool findJPEG(int *jpegBlockCounter, FILE *inptr)
         // Signature found!
         if (signatureFound == 2)
         {
-            // Return true if a new jpeg signature was found
+            // Return true if a new jpeg signature was found while processing an existing jpeg
             if (*jpegBlockCounter > 0)
             {
                 return true;
