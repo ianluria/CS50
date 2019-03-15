@@ -6,6 +6,31 @@
 
 typedef unsigned char BYTE;
 
+//scan through card and tally how many signatures are found on block breaks
+//make an int array to store each memory address of a new jpeg on card
+//read through card and dynamically store each jpegs blocks into an array
+//write that array into a new jpeg file
+
+
+//scan through each block checking for signature
+
+//if signature found
+//add that block to a new jpeg file
+//if next block is not a signature
+//APPEND that block to current jpeg file
+//else if next block is a signature
+//close current jpeg
+//make new jpeg
+//add block to new jpeg
+//reloop
+
+//if signature 
+//read block into array
+//append array into jpeg file
+//when another signature is found, close existing jpeg, make new file and write into that. 
+
+
+
 
 bool findJPEG(int *counter, FILE *inptr);
 int testForJPEGSignature(int index, FILE *inptr, int *rewindCounter);
@@ -180,21 +205,16 @@ bool findJPEG(int *jpegBlockCounter, FILE *inptr)
             // Return true if a new jpeg signature was found while processing an existing jpeg
             if (*jpegBlockCounter > 0)
             {
-                
-                
                 return true;
             }
 
             *jpegBlockCounter += 1;
 
-            // Move forward 512 bytes in file to next block
-            int seek = fseek(inptr, 512, SEEK_CUR);
+            
+            //read in block to storage array struct 
 
             // End of file or error
-            if (seek < 0)
-            {
-                return false;
-            }
+            
             //printf("ftell from sigFound = 2:  %lu\n", ftell(inptr));
         }
         else if (signatureFound == 1)
