@@ -6,7 +6,7 @@
 
 typedef unsigned char BYTE;
 
-int createNewJpegFile(int newJpegCounter, FILE *jpegImageFile);
+int createNewJpegFile(int newJpegCounter, FILE **jpegImageFile);
 int testForJPEGSignature(int index, FILE *inptr, int *rewindCounter);
 
 int main(int argc, char *argv[])
@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     bool nextJpegBlock = true;
     int newJpegCounter = 0;
     int jpegBlockCounter = 0;
-    FILE *jpegImageFile;
+    FILE *jpegImageFile = NULL;
 
     while (nextJpegBlock)
     {
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
             }
 
             //create new jpeg file
-            int newFile = createNewJpegFile(newJpegCounter, jpegImageFile);
+            int newFile = createNewJpegFile(newJpegCounter, &jpegImageFile);
 
             // Error creating a new jpeg file
             if (newFile == 2)
@@ -140,13 +140,14 @@ int main(int argc, char *argv[])
 
         if (appendToFile)
         {
-            size_t writeCount = fwrite(blockArray, 512, 1, &jpegImageFile);
+
+            size_t writeCount = fwrite(blockArray, sizeof(BYTE), sizeof(blockArray), jpegImageFile);
 
             // Error
             if (writeCount < sizeof(blockArray) / sizeof(blockArray[0]))
             {
-                int end = feof(&jpegImageFile);
-                int error = ferror(&jpegImageFile);
+                int end = feof(jpegImageFile);
+                int error = ferror(jpegImageFile);
 
                 if (end > 0)
                 {
@@ -175,7 +176,7 @@ int main(int argc, char *argv[])
 
 // Returns 1 for success
 // Returns 2 for failure
-int createNewJpegFile(int newJpegCounter, FILE *jpegImageFile)
+int createNewJpegFile(int newJpegCounter, FILE **jpegImageFile)
 {
 
     char jpegFilename[8];
@@ -184,7 +185,7 @@ int createNewJpegFile(int newJpegCounter, FILE *jpegImageFile)
 
     *jpegImageFile = fopen(jpegFilename, "a");
 
-    if (jpegImg == NULL)
+    if (jpegImageFile == NULL)
     {
         fprintf(stderr, "Could not open jpeg.\n");
         return 2;
