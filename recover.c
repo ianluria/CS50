@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <stdbool.h>
-#include <string.h>
 
 typedef unsigned char BYTE;
 
@@ -29,20 +27,25 @@ int main(int argc, char *argv[])
     }
 
     bool nextJpegBlock = true;
+
+    // Tally how many new jpeg files are being created
     int newJpegCounter = 0;
+    // How many block of 512 bytes are in each jpeg image
     int jpegBlockCounter = 0;
+
     FILE *jpegImageFile = NULL;
 
     while (nextJpegBlock)
     {
-
+        // How many places to rewind the input file after testing for a jpeg signature
         int rewindCounter = 0;
+
         bool appendToFile = false;
 
         // Test for signature sequence in current position of inptr
         int signatureFound = testForJPEGSignature(0, inptr, &rewindCounter);
 
-        // Error found in inptr
+        // Error reading from inptr
         if (signatureFound == 0)
         {
             return 5;
@@ -56,7 +59,7 @@ int main(int argc, char *argv[])
 
         rewindCounter *= -1;
 
-        //return to beginning of block
+        // Return to beginning of block
         int rewindSeek = fseek(inptr, rewindCounter, SEEK_CUR);
 
         // End of file or error
@@ -79,9 +82,7 @@ int main(int argc, char *argv[])
         // Signature found!
         if (signatureFound == 2)
         {
-            printf("Signature found:  %lu\n", ftell(inptr));
-
-            // if a new jpeg signature was found while processing an existing jpeg close current file
+            // If a new jpeg signature was found while processing an existing jpeg, close the current file
             if (jpegBlockCounter > 0)
             {
                 int jpegClose = fclose(jpegImageFile);
@@ -94,7 +95,7 @@ int main(int argc, char *argv[])
                 jpegBlockCounter = 0;
             }
 
-            //create new jpeg file
+            // Create new jpeg file
             int newFile = createNewJpegFile(newJpegCounter, &jpegImageFile);
 
             // Error creating a new jpeg file
@@ -116,7 +117,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        // Read block into array while advancing inptr
+        // Read block into array while advancing within inptr
         BYTE blockArray[512];
 
         size_t read = fread(blockArray, sizeof(blockArray) / sizeof(BYTE), 1, inptr);
@@ -141,7 +142,7 @@ int main(int argc, char *argv[])
         if (appendToFile)
         {
 
-            size_t writeCount = fwrite(blockArray, sizeof(BYTE), sizeof(blockArray), jpegImageFile);
+            size_t writeCount = fwrite(blockArray, sizeof(BYTE), sizeof(blockArray) / sizeof(blockArray[0]), jpegImageFile);
 
             // Error
             if (writeCount < sizeof(blockArray) / sizeof(blockArray[0]))
@@ -194,19 +195,17 @@ int createNewJpegFile(int newJpegCounter, FILE **jpegImageFile)
     return 1;
 }
 
-//Given the current location in file, check if the next four bytes are a jpeg signature
-//Returns 0 for error
-//Returns 1 for byte does not match signature
-//Returns 2 for complete signature found
-//Returns 3 for end of file
+// Given the current location in file, check if the next four bytes are a jpeg signature
+// Returns 0 for error
+// Returns 1 for byte does not match signature
+// Returns 2 for complete signature found
+// Returns 3 for end of file
 
 int testForJPEGSignature(int index, FILE *inptr, int *rewindCounter)
 {
     BYTE testByte = 0;
 
     const int JPEGSIGNATUREBYTES[] = {255, 216, 255};
-
-    // Test the parameter testByte before testing a byte from file
 
     size_t read = fread(&testByte, sizeof(BYTE), 1, inptr);
 
@@ -235,23 +234,16 @@ int testForJPEGSignature(int index, FILE *inptr, int *rewindCounter)
         // Complete match of signature
         if ((testByte & 240) == 224)
         {
-            //*rewindCounter += 1;
             return 2;
         }
         else
         {
-            //*rewindCounter += 1;
             return 1;
         }
     }
 
     if (testByte == JPEGSIGNATUREBYTES[index])
     {
-
-        // Tally how many bytes need to be rewound
-
-        //*rewindCounter += 1;
-
         index += 1;
 
         int foundNextSignatureByte = testForJPEGSignature(index, inptr, rewindCounter);
