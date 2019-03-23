@@ -7,6 +7,9 @@
 
 #include "dictionary.h"
 
+int hashChar(char character);
+bool load(const char *dictionary);
+
 // Represents number of children for each node in a trie
 #define N 27
 
@@ -66,26 +69,9 @@ bool load(const char *dictionary)
         for (int i = 0; i < len; i++)
         {
             char letter = word[i];
-            int hash = 0;
+            int hash = hashChar(letter);
 
-            // Apostrophe
-            if (letter = 39)
-            {
-                hash = 26;
-            }
-            // Letter at 123 will produce a false positive
-            else if (letter = 123)
-            {
-                letter = 94;
-            }
-            else
-            {
-                // a = 0 ... z = 25;
-                //to lower case
-                hash = letter - 97;
-            }
-
-            if (hash < 0 || hash > 26)
+            if (hash == 1000)
             {
                 break;
             }
@@ -121,8 +107,6 @@ bool load(const char *dictionary)
                 // Point nodeTracker to the next node
                 nodeTracker = thisCharIndex;
             }
-
-            
         }
 
         //for loop through word
@@ -154,8 +138,40 @@ unsigned int size(void)
 // Returns true if word is in dictionary else false
 bool check(const char *word)
 {
+    int len = strlen(word);
+    node *tracker = root;
     // TODO
     //loop through each char
+    for (int i = 0; i < len; i++)
+    {
+        char character = word[i];
+
+        int hashed = hashChar(character);
+
+        // Array index hasn't been created
+        if (tracker->children[hashed] == NULL)
+        {
+            return false;
+        }
+        else
+        {
+            // Tracker now points to the node at the index
+            tracker = tracker->children[hashed];
+        }
+
+        // End of string reached 
+        if (i == len - 1)
+        {
+            if (tracker.is_word)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
     //starting at root, if the node's children's index is not null for char
     //assign tracker to that node
     //if last char reached, check if make_is_word is true
@@ -168,4 +184,28 @@ bool unload(void)
 {
     // TODO
     return false;
+}
+
+// Takes a character and returns an integer between 0-26 if the character is [a-z\']
+// Else, returns 1000
+int hashChar(char character)
+{
+    // Apostrophe
+    if (character = 39)
+    {
+        return 26;
+    }
+    // Letter at 123 will produce a false positive
+    else if (character = 123)
+    {
+        return 1000;
+    }
+    else
+    {
+        // a = 0 ... z = 25;
+        //to lower case
+        return character - 97;
+    }
+
+    return 1000;
 }
