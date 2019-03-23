@@ -9,6 +9,7 @@
 
 int hashChar(char character);
 bool load(const char *dictionary);
+bool freeNodes(node *node);
 
 // Represents number of children for each node in a trie
 #define N 27
@@ -159,7 +160,7 @@ bool check(const char *word)
             tracker = tracker->children[hashed];
         }
 
-        // End of string reached 
+        // End of string reached
         if (i == len - 1)
         {
             if (tracker.is_word)
@@ -182,8 +183,36 @@ bool check(const char *word)
 // Unloads dictionary from memory, returning true if successful else false
 bool unload(void)
 {
-    // TODO
-    return false;
+    freeNodes(root);
+
+    free(root);
+
+    return true;
+}
+
+//can only delete nodes that have blank arrays
+
+bool freeNodes(node *node)
+{
+    for (int i = 0; i < N; i++)
+    {
+        node *thisNode = node->children[i];
+
+        if (thisNode != NULL)
+        {
+            // Check if all of thisNode's children are NULL pointers
+            bool isBlank = freeNodes(thisNode);
+
+            if (isBlank)
+            {
+                // thisNode is now NULL;
+                free(thisNode);
+            }
+        }
+        
+    }
+
+    return true;
 }
 
 // Takes a character and returns an integer between 0-26 if the character is [a-z\']
