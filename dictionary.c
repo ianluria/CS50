@@ -25,18 +25,23 @@ typedef struct node
 node *root;
 
 unsigned int *wordCount;
+
+// Keeps track of whether the dictionary has been sucessfully loaded
 bool loaded = false;
 
-// Loads dictionary into memory, returning true if successful else false
+// Loads dictionary into memory, returning true if successful, else false
 bool load(const char *dictionary)
 {
     // Initialize trie
     root = malloc(sizeof(node));
+
     if (root == NULL)
     {
         return false;
     }
+
     root->is_word = false;
+
     for (int i = 0; i < N; i++)
     {
         root->children[i] = NULL;
@@ -58,11 +63,6 @@ bool load(const char *dictionary)
     // Insert words into trie
     while (fscanf(file, "%s", word) != EOF)
     {
-        // TODO
-        //check for lowercase
-
-        *wordCount += 1;
-
         int len = strlen(word);
 
         node *nodeTracker = root;
@@ -74,13 +74,14 @@ bool load(const char *dictionary)
 
             if (hash == 1000)
             {
+                //check for break out of for loop only
                 break;
             }
 
             // Pointer to the node of this hash's index in the node nodeTracker is pointing to
             node *thisCharIndex = nodeTracker->children[hash];
 
-            if (thisCharIndex = NULL)
+            if (thisCharIndex == NULL)
             {
                 // Allocate space for a new node at that index
                 thisCharIndex = malloc(sizeof(node));
@@ -92,7 +93,7 @@ bool load(const char *dictionary)
 
                 thisCharIndex->is_word = false;
 
-                for (int newIndex = 0; newIndex < newIndex++)
+                for (int newIndex = 0; newIndex < N; newIndex++)
                 {
                     thisCharIndex->children[i] = NULL;
                 }
@@ -102,6 +103,7 @@ bool load(const char *dictionary)
             if (i == len - 1)
             {
                 thisCharIndex->is_word = true;
+                *wordCount += 1;
             }
             else
             {
@@ -109,11 +111,6 @@ bool load(const char *dictionary)
                 nodeTracker = thisCharIndex;
             }
         }
-
-        //for loop through word
-        //hash char
-        //if char's index's pointer is null, malloc a new node
-        //if last char is reached make is_word true
     }
 
     // Close dictionary
@@ -141,13 +138,19 @@ bool check(const char *word)
 {
     int len = strlen(word);
     node *tracker = root;
-    // TODO
+
     //loop through each char
     for (int i = 0; i < len; i++)
     {
         char character = word[i];
 
         int hashed = hashChar(character);
+
+        // Character not valid
+        if (hashed == 1000)
+        {
+            return false;
+        }
 
         // Array index hasn't been created
         if (tracker->children[hashed] == NULL)
@@ -163,7 +166,7 @@ bool check(const char *word)
         // End of string reached
         if (i == len - 1)
         {
-            if (tracker.is_word)
+            if (tracker->is_word)
             {
                 return true;
             }
@@ -173,9 +176,6 @@ bool check(const char *word)
             }
         }
     }
-    //starting at root, if the node's children's index is not null for char
-    //assign tracker to that node
-    //if last char reached, check if make_is_word is true
 
     return false;
 }
@@ -209,7 +209,6 @@ bool freeNodes(node *node)
                 free(thisNode);
             }
         }
-        
     }
 
     return true;
@@ -220,19 +219,23 @@ bool freeNodes(node *node)
 int hashChar(char character)
 {
     // Apostrophe
-    if (character = 39)
+    if (character == 39)
     {
         return 26;
     }
-    // Letter at 123 will produce a false positive
-    else if (character = 123)
+
+    if (character > 64 && character < 123)
     {
-        return 1000;
-    }
-    else
-    {
+        if (character < 91 && character > 96)
+        {
+            // Make uppercase letter lowercase
+            if (character > 64 && character < 91)
+            {
+                character = character + 32;
+            }
+        }
+
         // a = 0 ... z = 25;
-        //to lower case
         return character - 97;
     }
 
