@@ -7,9 +7,7 @@
 
 #include "dictionary.h"
 
-int hashChar(char character);
-bool load(const char *dictionary);
-bool freeNodes(node *node);
+
 
 // Represents number of children for each node in a trie
 #define N 27
@@ -20,6 +18,10 @@ typedef struct node
     bool is_word;
     struct node *children[N];
 } node;
+
+int hashChar(char character);
+bool load(const char *dictionary);
+bool freeNodes(node *node);
 
 // Represents a trie
 node *root;
@@ -194,11 +196,14 @@ bool unload(void)
 
 bool freeNodes(node *node)
 {
+
+   
+
     for (int i = 0; i < N; i++)
     {
-        node *thisNode = node->children[i];
+         node *thisNode = node->children[i];
 
-        if (thisNode != NULL)
+        if (*thisNode != NULL)
         {
             // Check if all of thisNode's children are NULL pointers
             bool isBlank = freeNodes(thisNode);
