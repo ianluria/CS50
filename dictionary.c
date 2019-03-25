@@ -7,8 +7,6 @@
 
 #include "dictionary.h"
 
-
-
 // Represents number of children for each node in a trie
 #define N 27
 
@@ -26,7 +24,7 @@ bool freeNodes(node *node);
 // Represents a trie
 node *root;
 
-unsigned int *wordCount;
+unsigned int wordCount = 0;
 
 // Keeps track of whether the dictionary has been sucessfully loaded
 bool loaded = false;
@@ -57,7 +55,7 @@ bool load(const char *dictionary)
         return false;
     }
 
-    *wordCount = 0;
+    // *wordCount = 0;
 
     // Buffer for a word
     char word[LENGTH + 1];
@@ -97,15 +95,18 @@ bool load(const char *dictionary)
 
                 for (int newIndex = 0; newIndex < N; newIndex++)
                 {
-                    thisCharIndex->children[i] = NULL;
+                    thisCharIndex->children[newIndex] = NULL;
                 }
+
+                // Pointer at hash index now points to new node
+                nodeTracker->children[hash] = thisCharIndex;
             }
 
             // Last char of word reached
             if (i == len - 1)
             {
                 thisCharIndex->is_word = true;
-                *wordCount += 1;
+                wordCount += 1;
             }
             else
             {
@@ -126,10 +127,9 @@ bool load(const char *dictionary)
 // Returns number of words in dictionary if loaded else 0 if not yet loaded
 unsigned int size(void)
 {
-    // TODO
     if (loaded)
     {
-        return *wordCount;
+        return wordCount;
     }
 
     return 0;
@@ -194,16 +194,14 @@ bool unload(void)
 
 //can only delete nodes that have blank arrays
 
-bool freeNodes(node *node)
+bool freeNodes(node *nodeIn)
 {
-
-   
 
     for (int i = 0; i < N; i++)
     {
-         node *thisNode = node->children[i];
+        node *thisNode = nodeIn->children[i];
 
-        if (*thisNode != NULL)
+        if (thisNode != NULL)
         {
             // Check if all of thisNode's children are NULL pointers
             bool isBlank = freeNodes(thisNode);
@@ -231,10 +229,10 @@ int hashChar(char character)
 
     if (character > 64 && character < 123)
     {
-        if (character < 91 && character > 96)
+        if (character < 91 || character > 96)
         {
             // Make uppercase letter lowercase
-            if (character > 64 && character < 91)
+            if (character < 91)
             {
                 character = character + 32;
             }
