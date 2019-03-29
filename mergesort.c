@@ -1,74 +1,75 @@
 #include <stdio.h>
+#include <string.h>
+
+void merge(int low, int high, int *array, int *aux);
 
 int main(void)
 {
-}
 
-bool sort(int start, int length) //7 ,2
-{
-    const int MASTERARRAY[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    int array[] = {25, 10, 8, 6};
 
-    int arrayIn[length]; //2
+    int length = (sizeof(array) / sizeof(array[0]));
+
+    int aux[length];
+
+    memcpy(aux, array, sizeof(array));
+
+    merge(0, length - 1, array, aux);
 
     for (int i = 0; i < length; i++)
     {
-        arrayIn[i] = MASTERARRAY[start + i];
+        printf("%d = %d\n", i, array[i]);
     }
 
-    if (length == 1)
+    return 0;
+}
+
+void merge(int low, int high, int *array, int *aux)
+{
+
+    if (low == high)
     {
-        printf("single element: %i\n", arrayIn[0]);
-        return true;
+        return;
     }
-    else
+
+    int midpoint = ((high - low) / 2) + low;
+
+    merge(low, midpoint, array, aux);
+    merge(midpoint + 1, high, array, aux);
+
+    //combine the two arrays
+
+    int leftPosition = low;
+    int rightPosition = midpoint + 1;
+
+    for (int i = low; i <= high; i++)
     {
-        int midpoint = length / 2; //1 midpoint will always be part of high
-
-        int lowLen = midpoint; //1
-
-        int lowStart = start; //7
-
-        int highLen = length - midpoint; //1
-
-        int highStart = start + lowLen; //8
-
-        int arrayLow[lowLen];
-
-        int arrayHigh[highLen];
-
-        for (int i = 0; i < length; i++)
+        if (leftPosition > midpoint)
         {
-            if (i < lowLen)
-            {
-                arrayLow[i] = TESTARRAY[i + start];
-                //printf("low: index: %i  value: %i\n", i, arrayLow[i]);
-            }
-            else
-            {
-                int index = i - midpoint;
-                arrayHigh[index] = TESTARRAY[i + start];
-                //printf("high: index: %i  value: %i\n", index, arrayHigh[index]);
-            }
+            aux[i] = array[rightPosition];
+            rightPosition += 1;
         }
-
-        // Both low and high arrays have only one element
-        if (sort(lowLen, lowStart) && sort(highLen, highStart))
+        else if (rightPosition > high)
         {
-            //merge low with high
-
-            //low index is sorted 
-            // for each index in low array
-            //if that index is less than each in high array, place in 0 array
-            // else place lesser element from high array in 0 array
-
-            //  
-
-            return true;
+            aux[i] = array[leftPosition];
+            leftPosition += 1;
         }
-
-        return 0;
+        else if (array[leftPosition] <= array[rightPosition])
+        {
+            aux[i] = array[leftPosition];
+            leftPosition += 1;
+        }
+        else
+        {
+            aux[i] = array[rightPosition];
+            rightPosition += 1;
+        }
     }
 
-    // const int MASTERLENGTH = sizeof(MASTERARRAY) / sizeof(MASTERARRAY[0]);
+    for (int i = low; i <= high; i++)
+    {
+        array[i] = aux[i];
+    }
 
-    // const int MASTERMIDPOINT = MASTERLENGTH / 2;
+    return;
+}
