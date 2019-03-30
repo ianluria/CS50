@@ -139,6 +139,9 @@ unsigned int size(void)
 bool check(const char *word)
 {
     int len = strlen(word);
+
+    //if word greater than max length, return false
+
     node *tracker = root;
 
     //loop through each char
@@ -224,7 +227,7 @@ int hashChar(char character)
     // Apostrophe
     if (character == 39)
     {
-        return 26;
+        return 9;
     }
 
     if (character > 64 && character < 123)
@@ -238,7 +241,64 @@ int hashChar(char character)
             }
 
             // a = 0 ... z = 25;
-            return character - 97;
+            //return character - 97;
+
+            // Order by frequency found in holmes.txt
+            switch (character)
+            {
+            case 101:
+                return 0;
+            case 116:
+                return 1;
+            case 111:
+                return 2;
+            case 97:
+                return 3;
+            case 105:
+                return 4;
+            case 110:
+                return 5;
+            case 115:
+                return 6;
+            case 104:
+                return 7;
+            case 114:
+                return 8;
+            case 108:
+                return 10;
+            case 100:
+                return 11;
+            case 117:
+                return 12;
+            case 99:
+                return 13;
+            case 109:
+                return 14;
+            case 102:
+                return 15;
+            case 119:
+                return 16;
+            case 103:
+                return 17;
+            case 121:
+                return 18;
+            case 112:
+                return 19;
+            case 98:
+                return 20;
+            case 118:
+                return 21;
+            case 107:
+                return 22;
+            case 120:
+                return 23;
+            case 106:
+                return 24;
+            case 113:
+                return 25;
+            case 122:
+                return 26;
+            }
         }
     }
 
