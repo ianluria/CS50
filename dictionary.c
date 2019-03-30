@@ -236,10 +236,10 @@ int hashChar(char character)
             {
                 character = character + 32;
             }
-        }
 
-        // a = 0 ... z = 25;
-        return character - 97;
+            // a = 0 ... z = 25;
+            return character - 97;
+        }
     }
 
     return 1000;
