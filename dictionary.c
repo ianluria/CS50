@@ -140,7 +140,11 @@ bool check(const char *word)
 {
     int len = strlen(word);
 
-    //if word greater than max length, return false
+    // If word is greater than max length, return false
+    if (len > LENGTH)
+    {
+        return false;
+    }
 
     node *tracker = root;
 
