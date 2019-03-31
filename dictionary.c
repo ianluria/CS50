@@ -24,6 +24,7 @@ bool freeNodes(node *node);
 // Represents a trie
 node *root;
 
+// Keeps tracks of total number of words in dictionary
 unsigned int wordCount = 0;
 
 // Keeps track of whether the dictionary has been sucessfully loaded
@@ -55,8 +56,6 @@ bool load(const char *dictionary)
         return false;
     }
 
-    // *wordCount = 0;
-
     // Buffer for a word
     char word[LENGTH + 1];
 
@@ -74,7 +73,7 @@ bool load(const char *dictionary)
 
             if (hash == 1000)
             {
-                //check for break out of for loop only
+                // Break out of for loop only
                 break;
             }
 
@@ -86,11 +85,13 @@ bool load(const char *dictionary)
                 // Allocate space for a new node at that index
                 thisCharIndex = malloc(sizeof(node));
 
+                // Memory error
                 if (thisCharIndex == NULL)
                 {
                     return false;
                 }
 
+                // Initialize new node
                 thisCharIndex->is_word = false;
 
                 for (int newIndex = 0; newIndex < N; newIndex++)
@@ -141,14 +142,15 @@ bool check(const char *word)
     int len = strlen(word);
 
     // If word is greater than max length, return false
-    if (len > LENGTH)
+    // If word begins with an apostrope, return false
+    if (len > LENGTH || word[0] == 39)
     {
         return false;
     }
 
     node *tracker = root;
 
-    //loop through each char
+    // Loop through each char of word
     for (int i = 0; i < len; i++)
     {
         char character = word[i];
@@ -168,7 +170,7 @@ bool check(const char *word)
         }
         else
         {
-            // Tracker now points to the node at the index
+            // Tracker now points to the node at the hash index
             tracker = tracker->children[hashed];
         }
 
@@ -199,11 +201,10 @@ bool unload(void)
     return true;
 }
 
-//can only delete nodes that have blank arrays
-
+// Recursively goes through each node in memory until a node with entirely NULL children is found
+// That node is freed, and the process is repeated until all nodes have NULL children and are freed
 bool freeNodes(node *nodeIn)
 {
-
     for (int i = 0; i < N; i++)
     {
         node *thisNode = nodeIn->children[i];
