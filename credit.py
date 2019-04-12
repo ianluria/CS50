@@ -1,46 +1,46 @@
 from cs50 import get_int
 
-# Returns digit at tenCounter's place
+# Returns digit at tenCounter's place in userCCNumber 4111111111111111
 def getDigit(tenCounter, userCCNumber):
-    return (userCCNumber % tenCounter) // (tenCounter*0.1)
+    return (userCCNumber % tenCounter) // (tenCounter * 0.1)
 
 def main():
 
-    userCCNumber = 0
+    userCCNumber = -1
 
-    # Get credit card number from user
-    while userCCNumber < 1000000000000:
+    # Get credit card number from user 1000000000000
+    while userCCNumber < 0:
         userCCNumber = get_int("Your card number: ")
     
-    # Keeps track of which digit is being examined
+    # Keeps track of which digit in userCCNumber is being examined
     counter = 1
 
-    # Used to isolate an integer value
+    # Used to isolate an integer value in userCCNumber
     tenCounter = 10
 
+    # Sum of all examined digits in userCCNumber 
     grandSum = 0
-    #notUnderlinedSum = 0
-
-    # Go through each digit in userCCNumber and add to grandSum depending on position
+    
+    # Go through each digit in userCCNumber and add to grandSum depending on its position
     while tenCounter <= userCCNumber * 10:
+
         digit = getDigit(tenCounter, userCCNumber)
 
         # If counter is at an even numbered place
         if counter % 2 == 0:
 
             # Double the digit
-            product = digit * 2
-
+            doubled = digit * 2
             
-            underlined = product % 10
+            remainder = doubled % 10
 
-            # Is there more than one digit in digit? 
-            if product > 9:
+            # Is there now more than one digit in digit? 
+            if doubled > 9:
 
                # Add both digits together  
-               underlined = ((product - underlined) * 0.1) + underlined
+               remainder = ((doubled - remainder) * 0.1) + remainder
 
-            grandSum += underlined
+            grandSum += remainder
 
         else:
             grandSum += digit
@@ -48,15 +48,13 @@ def main():
         counter += 1
         tenCounter *= 10
 
-    # Counter overshot and need to be rewound one
+    # Counter overshot and needs to be rewound one
     counter -= 1
-
-    #grandSum = underlinedSum + notUnderlinedSum
 
     # CCNumber can only be valid if it is evenly divisible by 10
     if grandSum % 10 == 0:
 
-        firstTwoDigits = (getDigit(tenCounter *0.1, userCCNumber)*10)+(getDigit(tenCounter*0.01, userCCNumber))
+        firstTwoDigits = int((getDigit(tenCounter * 0.1, userCCNumber) * 10)+(getDigit(tenCounter * 0.01, userCCNumber)))
 
         if firstTwoDigits == 34 or firstTwoDigits == 37:
             # Counter is equal to the number of digits in userCCNumber
@@ -64,7 +62,7 @@ def main():
                 #creditCard = "A"
                 print("AMEX")
                 return
-        elif firstTwoDigits * 0.1 == 4:
+        elif int(firstTwoDigits * 0.1) == 4:
             if counter == 16 or counter == 13:
                 #creditCard = "V"
                 print("VISA")
@@ -76,20 +74,8 @@ def main():
                     print("MASTERCARD")
                     return
             
-        # if creditCard == "V":
-        #     print("VISA")
-        #     return
-        # elif creditCard == "M":
-        #     print("MASTERCARD")
-        #     return
-        # elif creditCard == "A":
-        #     print("AMEX")
-        #     return
-   
-
     print("INVALID")
     return
-
 
 if __name__ == "__main__":
     main()
