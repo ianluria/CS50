@@ -1,6 +1,6 @@
 from cs50 import get_int
 
-# Returns digit at tenCounter's place in userCCNumber 4111111111111111
+# Returns digit at tenCounter's place in userCCNumber  
 def getDigit(tenCounter, userCCNumber):
     return (userCCNumber % tenCounter) // (tenCounter * 0.1)
 
@@ -8,7 +8,7 @@ def main():
 
     userCCNumber = -1
 
-    # Get credit card number from user 1000000000000
+    # Get credit card number from user  
     while userCCNumber < 0:
         userCCNumber = get_int("Your card number: ")
     
@@ -51,7 +51,7 @@ def main():
     # Counter overshot and needs to be rewound one
     counter -= 1
 
-    # CCNumber can only be valid if it is evenly divisible by 10
+    # CCNumber can only be valid if grandSum is evenly divisible by 10
     if grandSum % 10 == 0:
 
         firstTwoDigits = int((getDigit(tenCounter * 0.1, userCCNumber) * 10)+(getDigit(tenCounter * 0.01, userCCNumber)))
@@ -59,18 +59,15 @@ def main():
         if firstTwoDigits == 34 or firstTwoDigits == 37:
             # Counter is equal to the number of digits in userCCNumber
             if counter == 15:
-                #creditCard = "A"
                 print("AMEX")
                 return
         elif int(firstTwoDigits * 0.1) == 4:
             if counter == 16 or counter == 13:
-                #creditCard = "V"
                 print("VISA")
                 return
         elif counter == 16:
             for i in range(51, 56):
                 if i == firstTwoDigits:
-                    #creditCard = "M"
                     print("MASTERCARD")
                     return
             
