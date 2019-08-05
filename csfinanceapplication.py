@@ -9,8 +9,6 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from helpers import apology, login_required, lookup, usd, lookupMultiple
 
-currentListOfStockPrices = []
-
 # Configure application
 app = Flask(__name__)
 
@@ -131,40 +129,44 @@ def quote():
 
     if request.method == "POST":
 
-        # Give error message to user if incomplete form
-        if not request.form.get("symbol"):
-            return render_template("messageDisplay.html", message="Please fill out ticker symbol.")
-
-        # Get the ticker symbol input that the user entered
-        tickerSymbol = request.form.get("symbol").upper()
-
-        # Lookup that ticker symbol via the API call
-        thisSymbolsQuote = lookup(tickerSymbol)
-
-        # Show user message if the ticker symbol is invalid
-        if thisSymbolsQuote == None:
-            return render_template("messageDisplay.html", message="Unable to find ticker symbol.")
-
+        errorMessage = ""
+        errorThrown = False
         user = session["username"]
 
-        # Check if the ticker symbol is already being tracked by the user
-        doesTickerAlreadyExist = db.execute(
-            "SELECT COUNT(Ticker) FROM Quotes WHERE User = :user AND Ticker = :ticker", user=user, ticker=tickerSymbol)[0]["COUNT(Ticker)"]
+        # Get the ticker symbol input that the user entered
+            tickerSymbol = request.form.get("symbol").upper()
 
-        # If the ticker symbol is not being tracked...
-        if doesTickerAlreadyExist == 0:
+        print(tickerSymbol)
 
-            maxQuoteNumber = db.execute(
-                "SELECT MAX(QuoteNumber) FROM Quotes WHERE User=:user", user=user)[0]['MAX(QuoteNumber)']
+        return apology("aqui", 403)
 
-            if maxQuoteNumber == None or maxQuoteNumber == 5:
-                maxQuoteNumber = 1
-            else:
-                maxQuoteNumber = maxQuoteNumber + 1
+        # Give error message to user if incomplete form
+        if not request.form.get("symbol"):
+            errorMessage = "Please fill out ticker symbol."
+            errorThrown = True
+            #return render_template("messageDisplay.html", message="Please fill out ticker symbol.")
 
-            # Insert the new ticker symbol in the appropriate row
-            db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
-                                    quoteNumber=maxQuoteNumber, user=user, ticker=tickerSymbol)
+        if not errorThrown:
+
+
+            # Check if the ticker symbol is already being tracked by the user
+            doesTickerAlreadyExist = db.execute(
+                "SELECT COUNT(Ticker) FROM Quotes WHERE User = :user AND Ticker = :ticker", user=user, ticker=tickerSymbol)[0]["COUNT(Ticker)"]
+
+            # If the ticker symbol is not being tracked...
+            if doesTickerAlreadyExist == 0:
+
+                maxQuoteNumber = db.execute(
+                    "SELECT MAX(QuoteNumber) FROM Quotes WHERE User=:user", user=user)[0]['MAX(QuoteNumber)']
+
+                if maxQuoteNumber == None or maxQuoteNumber == 5:
+                    maxQuoteNumber = 1
+                else:
+                    maxQuoteNumber = maxQuoteNumber + 1
+
+                # Insert the new ticker symbol in the appropriate row
+                db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
+                                        quoteNumber=maxQuoteNumber, user=user, ticker=tickerSymbol)
 
         # Get a list of all the user's current ticker symbols
         usersTickers = db.execute(
@@ -191,28 +193,27 @@ def quote():
         if lookupResults == None:
             return  render_template("messageDisplay.html", message="Error getting results.")
 
-        # listOfCurrentPrices = []
-        currentListOfStockPrices.clear()
+
+        usersTickerNotPresent = True
+        currentListOfStockPrices = []
 
         for result in lookupResults:
 
-            currentListOfStockPrices.append((result["symbol"],result["lastSalePrice"]))
+            if result["symbol"] == tickerSymbol:
+                usersTickerNotPresent = False
+
+            currentListOfStockPrices.append((result["symbol"],result["price"]))
+
+        if not errorThrown:
+            if usersTickerNotPresent:
+                errorMessage = "Unable to find ticker symbol."
+                errorThrown = True
 
         print(currentListOfStockPrices)
 
         return render_template("printQuotes.html", usersQuotes = currentListOfStockPrices)
 
         #return apology("aqui", 403)
-
-    # user inputs a ticker symbol (auto complete?)
-    # display results from symbol on a quoted page
-    # store up to five quotes in a database
-    # user can refresh quotes to see updates
-    # if a user tries to add more than five, the first quote is popped
-    # user can delete quotes
-    # user can add a new quote
-    # render quotes directly on directly on quote route
-
 
 
     else:
