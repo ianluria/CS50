@@ -133,12 +133,11 @@ def quote():
         errorThrown = False
         user = session["username"]
 
-        # Get the ticker symbol input that the user entered
-            tickerSymbol = request.form.get("symbol").upper()
+        
 
-        print(tickerSymbol)
+        # print(usersTickerSymbol)
 
-        return apology("aqui", 403)
+        # return apology("aqui", 403)
 
         # Give error message to user if incomplete form
         if not request.form.get("symbol"):
@@ -146,12 +145,16 @@ def quote():
             errorThrown = True
             #return render_template("messageDisplay.html", message="Please fill out ticker symbol.")
 
+      
+
         if not errorThrown:
 
+            # Get the ticker symbol input that the user entered
+            usersTickerSymbol = request.form.get("symbol").upper()
 
             # Check if the ticker symbol is already being tracked by the user
             doesTickerAlreadyExist = db.execute(
-                "SELECT COUNT(Ticker) FROM Quotes WHERE User = :user AND Ticker = :ticker", user=user, ticker=tickerSymbol)[0]["COUNT(Ticker)"]
+                "SELECT COUNT(Ticker) FROM Quotes WHERE User = :user AND Ticker = :ticker", user=user, ticker=usersTickerSymbol)[0]["COUNT(Ticker)"]
 
             # If the ticker symbol is not being tracked...
             if doesTickerAlreadyExist == 0:
@@ -166,52 +169,52 @@ def quote():
 
                 # Insert the new ticker symbol in the appropriate row
                 db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
-                                        quoteNumber=maxQuoteNumber, user=user, ticker=tickerSymbol)
+                                        quoteNumber=maxQuoteNumber, user=user, ticker=usersTickerSymbol)
 
         # Get a list of all the user's current ticker symbols
-        usersTickers = db.execute(
+        usersCurrentTickers = db.execute(
             "SELECT Ticker FROM Quotes WHERE User = :user", user=user)
 
         #check if order is maintained of tickers
 
         multipleParametersForAPI = ""
 
-        for symbol in usersTickers:
+        for symbol in usersCurrentTickers:
             multipleParametersForAPI = multipleParametersForAPI + symbol["Ticker"] + ","
 
         # Remove the trailing comma
         multipleParametersForAPI = multipleParametersForAPI[:-1]
 
-        print(multipleParametersForAPI)
+        # print(multipleParametersForAPI)
 
         # Get the JSON results from calling the API with multiple parameters
         lookupResults = lookupMultiple(multipleParametersForAPI)
 
         print("lookup results:", lookupResults)
 
-        # Notify user if there is an error getting prices
+        # Notify user if there is an error getting prices and stop execution
         if lookupResults == None:
             return  render_template("messageDisplay.html", message="Error getting results.")
-
 
         usersTickerNotPresent = True
         currentListOfStockPrices = []
 
         for result in lookupResults:
-
-            if result["symbol"] == tickerSymbol:
-                usersTickerNotPresent = False
+            # Only check for presence of usersTickerSymbol if there is not a previous error (i.e. no symbol was entered)
+            if not errorThrown:
+                if result["symbol"] == usersTickerSymbol:
+                    usersTickerNotPresent = False
 
             currentListOfStockPrices.append((result["symbol"],result["price"]))
 
         if not errorThrown:
             if usersTickerNotPresent:
-                errorMessage = "Unable to find ticker symbol."
-                errorThrown = True
+                errorMessage = f"Unable to find ticker symbol {usersTickerSymbol}."
+            
 
-        print(currentListOfStockPrices)
+        # print(currentListOfStockPrices)
 
-        return render_template("printQuotes.html", usersQuotes = currentListOfStockPrices)
+        return render_template("printQuotes.html", usersQuotes = currentListOfStockPrices, errorMessage= errorMessage)
 
         #return apology("aqui", 403)
 
