@@ -72,9 +72,6 @@ def login():
     # Forget any user_id
     session.clear()
 
-    # Clear any existing list of stock quotes
-    currentListOfStockPrices.clear()
-
     # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
 
@@ -133,7 +130,7 @@ def quote():
         errorThrown = False
         user = session["username"]
 
-        
+
 
         # print(usersTickerSymbol)
 
@@ -145,7 +142,7 @@ def quote():
             errorThrown = True
             #return render_template("messageDisplay.html", message="Please fill out ticker symbol.")
 
-      
+
 
         if not errorThrown:
 
@@ -162,8 +159,11 @@ def quote():
                 maxQuoteNumber = db.execute(
                     "SELECT MAX(QuoteNumber) FROM Quotes WHERE User=:user", user=user)[0]['MAX(QuoteNumber)']
 
-                if maxQuoteNumber == None or maxQuoteNumber == 5:
+                if maxQuoteNumber == None:
                     maxQuoteNumber = 1
+                elif maxQuoteNumber == 5:
+                    maxQuoteNumber = 1
+                    db.execute("DELETE FROM Quotes WHERE User=:user AND QuoteNumber = 1", user=user)
                 else:
                     maxQuoteNumber = maxQuoteNumber + 1
 
@@ -190,7 +190,7 @@ def quote():
         # Get the JSON results from calling the API with multiple parameters
         lookupResults = lookupMultiple(multipleParametersForAPI)
 
-        print("lookup results:", lookupResults)
+        #print("lookup results:", lookupResults)
 
         # Notify user if there is an error getting prices and stop execution
         if lookupResults == None:
@@ -210,9 +210,9 @@ def quote():
         if not errorThrown:
             if usersTickerNotPresent:
                 errorMessage = f"Unable to find ticker symbol {usersTickerSymbol}."
-            
 
-        # print(currentListOfStockPrices)
+
+        print(currentListOfStockPrices)
 
         return render_template("printQuotes.html", usersQuotes = currentListOfStockPrices, errorMessage= errorMessage)
 
