@@ -129,62 +129,54 @@ def quote():
         errorMessage = ""
         errorThrown = False
         user = session["username"]
+        maxQuoteNumber = 0
 
+        #make a copy of all the existing records for the user in the database
+         usersCurrentTickers = db.execute(
+            "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
 
-
-        # print(usersTickerSymbol)
-
-        # return apology("aqui", 403)
-
-        # Give error message to user if incomplete form
+        # Prepare error message to user if incomplete form
         if not request.form.get("symbol"):
             errorMessage = "Please fill out ticker symbol."
             errorThrown = True
             #return render_template("messageDisplay.html", message="Please fill out ticker symbol.")
 
-
-
         if not errorThrown:
-
             # Get the ticker symbol input that the user entered
             usersTickerSymbol = request.form.get("symbol").upper()
 
+            # Create error message is the length is too long?
             # Check if the ticker symbol is already being tracked by the user
-            doesTickerAlreadyExist = db.execute(
-                "SELECT COUNT(Ticker) FROM Quotes WHERE User = :user AND Ticker = :ticker", user=user, ticker=usersTickerSymbol)[0]["COUNT(Ticker)"]
+            for symbol in usersCurrentTickers:
+                if symbol["Ticker"] == usersTickerSymbol:
+                    maxQuoteNumber = usersCurrentTickers[-1]["QuoteNumber"]
+        
+                    # maxQuoteNumber = db.execute(
+                    #     "SELECT MAX(QuoteNumber) FROM Quotes WHERE User=:user", user=user)[0]['MAX(QuoteNumber)']
 
-            # If the ticker symbol is not being tracked...
-            if doesTickerAlreadyExist == 0:
+                    if maxQuoteNumber == None:
+                        maxQuoteNumber = 2
+                    # elif maxQuoteNumber == 5:
+                    #     maxQuoteNumber = 1
+                        # db.execute("DELETE FROM Quotes WHERE User=:user AND QuoteNumber = 1", user=user)
+                    else:
+                        maxQuoteNumber = maxQuoteNumber + 1
 
-                maxQuoteNumber = db.execute(
-                    "SELECT MAX(QuoteNumber) FROM Quotes WHERE User=:user", user=user)[0]['MAX(QuoteNumber)']
+                # Insert the new ticker symbol in a temporary row so it can be tested first
+                # db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (100, :user, :ticker)",
+                #                         user=user, ticker=usersTickerSymbol)
 
-                if maxQuoteNumber == None:
-                    maxQuoteNumber = 1
-                elif maxQuoteNumber == 5:
-                    maxQuoteNumber = 1
-                    db.execute("DELETE FROM Quotes WHERE User=:user AND QuoteNumber = 1", user=user)
-                else:
-                    maxQuoteNumber = maxQuoteNumber + 1
-
-                # Insert the new ticker symbol in the appropriate row
-                db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
-                                        quoteNumber=maxQuoteNumber, user=user, ticker=usersTickerSymbol)
-
-        # Get a list of all the user's current ticker symbols
-        usersCurrentTickers = db.execute(
-            "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
+            # Insert usersTickerSymbol into list
+            usersCurrentTickers.append({"Ticker":usersTickerSymbol,"QuoteNumber":maxQuoteNumber})
 
         #print("user's tickers: ", usersCurrentTickers)
 
-        #check if order is maintained of tickers
-
         multipleParametersForAPI = ""
-        currentListOfStockPrices = []
+        #currentListOfStockPrices = []
 
         for symbol in usersCurrentTickers:
             multipleParametersForAPI = multipleParametersForAPI + symbol["Ticker"] + ","
-            currentListOfStockPrices.append({"ticker": symbol["Ticker"], "number": symbol["QuoteNumber"], "price": 0})
+            #currentListOfStockPrices.append({"ticker": symbol["Ticker"], "number": symbol["QuoteNumber"], "price": 0})
 
         # Remove the trailing comma
         multipleParametersForAPI = multipleParametersForAPI[:-1]
@@ -204,10 +196,10 @@ def quote():
         # currentListOfStockPrices = []
 
         for result in lookupResults:
-            # Only check for presence of usersTickerSymbol if there is not a previous error (i.e. no symbol was entered)
 
             resultTickerSymbol = result["symbol"]
 
+            # Only check for presence of usersTickerSymbol if there is not a previous error (i.e. no symbol was entered)
             if not errorThrown:
                 if resultTickerSymbol == usersTickerSymbol:
                     usersTickerNotPresent = False
@@ -216,15 +208,20 @@ def quote():
                 if userQuote["ticker"] == resultTickerSymbol:
                     userQuote["price"] = result["price"]
 
-
-            #currentListOfStockPrices.append((result["symbol"],result["price"]))
-
-        # Return an error message if the user did enter a ticker symbol, but it was invalid (not present in API results)
+        
         if not errorThrown:
+            # Return an error message if the user did enter a ticker symbol, but it was invalid (not present in API results)
             if usersTickerNotPresent:
-                db.execute("DELETE FROM Quotes WHERE User=:user AND Ticker = :usersTickerSymbol", user=user, usersTickerSymbol=usersTickerSymbol))
                 errorMessage = f"Unable to find ticker symbol {usersTickerSymbol}."
+            # Alter the database to reflect a new sucessful entry    
+            else:
+                #Delete the oldest entry
+                db.execute("DELETE FROM Quotes WHERE User=:user AND QuoteNumber = 1", user=user)
+                #Renumber each remaining entry down one
+                for newQuoteNumber in range(1,5):
 
+                
+                #Insert new entry at 5 
         for userQuote in currentListOfStockPrices:
             if userQuote["price"] <= 0:
                 currentListOfStockPrices.remove(userQuote)
