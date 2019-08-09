@@ -173,14 +173,18 @@ def quote():
 
         # Get a list of all the user's current ticker symbols
         usersCurrentTickers = db.execute(
-            "SELECT Ticker FROM Quotes WHERE User = :user", user=user)
+            "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
+
+        #print("user's tickers: ", usersCurrentTickers)
 
         #check if order is maintained of tickers
 
         multipleParametersForAPI = ""
+        currentListOfStockPrices = []
 
         for symbol in usersCurrentTickers:
             multipleParametersForAPI = multipleParametersForAPI + symbol["Ticker"] + ","
+            currentListOfStockPrices.append({"ticker": symbol["Ticker"], "number": symbol["QuoteNumber"], "price": 0})
 
         # Remove the trailing comma
         multipleParametersForAPI = multipleParametersForAPI[:-1]
@@ -197,19 +201,33 @@ def quote():
             return  render_template("messageDisplay.html", message="Error getting results.")
 
         usersTickerNotPresent = True
-        currentListOfStockPrices = []
+        # currentListOfStockPrices = []
 
         for result in lookupResults:
             # Only check for presence of usersTickerSymbol if there is not a previous error (i.e. no symbol was entered)
+
+            resultTickerSymbol = result["symbol"]
+
             if not errorThrown:
-                if result["symbol"] == usersTickerSymbol:
+                if resultTickerSymbol == usersTickerSymbol:
                     usersTickerNotPresent = False
 
-            currentListOfStockPrices.append((result["symbol"],result["price"]))
+            for userQuote in currentListOfStockPrices:
+                if userQuote["ticker"] == resultTickerSymbol:
+                    userQuote["price"] = result["price"]
 
+
+            #currentListOfStockPrices.append((result["symbol"],result["price"]))
+
+        # Return an error message if the user did enter a ticker symbol, but it was invalid (not present in API results)
         if not errorThrown:
             if usersTickerNotPresent:
+                db.execute("DELETE FROM Quotes WHERE User=:user AND Ticker = :usersTickerSymbol", user=user, usersTickerSymbol=usersTickerSymbol))
                 errorMessage = f"Unable to find ticker symbol {usersTickerSymbol}."
+
+        for userQuote in currentListOfStockPrices:
+            if userQuote["price"] <= 0:
+                currentListOfStockPrices.remove(userQuote)
 
 
         print(currentListOfStockPrices)
