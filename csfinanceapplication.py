@@ -145,7 +145,7 @@ def quote():
             # Get the ticker symbol input that the user entered
             usersTickerSymbol = request.form.get("symbol").upper()
 
-            # Create error message is the length is too long?
+            # Create error message if the length is too long?
             # Check if the ticker symbol is already being tracked by the user
             for symbol in usersCurrentTickers:
                 if symbol["Ticker"] == usersTickerSymbol:
@@ -199,7 +199,7 @@ def quote():
 
             resultTickerSymbol = result["symbol"]
 
-            # Only check for presence of usersTickerSymbol if there is not a previous error (i.e. no symbol was entered)
+            # Only check for presence of usersTickerSymbol if there was not a previous error (i.e. no symbol was entered)
             if not errorThrown:
                 if resultTickerSymbol == usersTickerSymbol:
                     usersTickerNotPresent = False
