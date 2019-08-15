@@ -130,53 +130,62 @@ def quote():
         errorThrown = False
         user = session["username"]
         maxQuoteNumber = 0
+        usersQuoteDictEntry = {}
 
-        #make a copy of all the existing records for the user in the database
-         usersCurrentTickers = db.execute(
+        # make a copy of all the existing records for the user in the database
+        usersCurrentTickers = db.execute(
             "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
 
         # Prepare error message to user if incomplete form
         if not request.form.get("symbol"):
             errorMessage = "Please fill out ticker symbol."
             errorThrown = True
-            #return render_template("messageDisplay.html", message="Please fill out ticker symbol.")
+            # return render_template("messageDisplay.html", message="Please fill out ticker symbol.")
 
         if not errorThrown:
             # Get the ticker symbol input that the user entered
             usersTickerSymbol = request.form.get("symbol").upper()
 
+            tickerAlreadyPresent = False
+
             # Create error message if the length is too long?
             # Check if the ticker symbol is already being tracked by the user
             for symbol in usersCurrentTickers:
                 if symbol["Ticker"] == usersTickerSymbol:
-                    maxQuoteNumber = usersCurrentTickers[-1]["QuoteNumber"]
-        
-                    # maxQuoteNumber = db.execute(
-                    #     "SELECT MAX(QuoteNumber) FROM Quotes WHERE User=:user", user=user)[0]['MAX(QuoteNumber)']
 
-                    if maxQuoteNumber == None:
-                        maxQuoteNumber = 2
-                    # elif maxQuoteNumber == 5:
-                    #     maxQuoteNumber = 1
-                        # db.execute("DELETE FROM Quotes WHERE User=:user AND QuoteNumber = 1", user=user)
-                    else:
-                        maxQuoteNumber = maxQuoteNumber + 1
+                    tickerAlreadyPresent = True
+
+            if not tickerAlreadyPresent:
+
+                maxQuoteNumber = usersCurrentTickers[-1]["QuoteNumber"]
+
+                if maxQuoteNumber == None:
+                    maxQuoteNumber = 1
+                # elif maxQuoteNumber == 5:
+                #     maxQuoteNumber = 1
+                    # db.execute("DELETE FROM Quotes WHERE User=:user AND QuoteNumber = 1", user=user)
+                else:
+                    maxQuoteNumber = maxQuoteNumber + 1
 
                 # Insert the new ticker symbol in a temporary row so it can be tested first
                 # db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (100, :user, :ticker)",
                 #                         user=user, ticker=usersTickerSymbol)
 
-            # Insert usersTickerSymbol into list
-            usersCurrentTickers.append({"Ticker":usersTickerSymbol,"QuoteNumber":maxQuoteNumber})
+                # Insert usersTickerSymbol into usersCurrentTickers
+                
+                usersCurrentTickers.append({
+                    "Ticker": usersTickerSymbol, "QuoteNumber": maxQuoteNumber})
 
         #print("user's tickers: ", usersCurrentTickers)
+
+        # Make a call to the API with each ticker symbol stored in usersCurrentTickers
 
         multipleParametersForAPI = ""
         #currentListOfStockPrices = []
 
         for symbol in usersCurrentTickers:
-            multipleParametersForAPI = multipleParametersForAPI + symbol["Ticker"] + ","
-            #currentListOfStockPrices.append({"ticker": symbol["Ticker"], "number": symbol["QuoteNumber"], "price": 0})
+            multipleParametersForAPI = multipleParametersForAPI + \
+                symbol["Ticker"] + ","
 
         # Remove the trailing comma
         multipleParametersForAPI = multipleParametersForAPI[:-1]
@@ -190,7 +199,7 @@ def quote():
 
         # Notify user if there is an error getting prices and stop execution
         if lookupResults == None:
-            return  render_template("messageDisplay.html", message="Error getting results.")
+            return render_template("messageDisplay.html", message="Error getting results.")
 
         usersTickerNotPresent = True
         # currentListOfStockPrices = []
@@ -204,35 +213,39 @@ def quote():
                 if resultTickerSymbol == usersTickerSymbol:
                     usersTickerNotPresent = False
 
-            for userQuote in currentListOfStockPrices:
+            # Add price information to list
+            for userQuote in usersCurrentTickers:
                 if userQuote["ticker"] == resultTickerSymbol:
                     userQuote["price"] = result["price"]
 
-        
         if not errorThrown:
             # Return an error message if the user did enter a ticker symbol, but it was invalid (not present in API results)
             if usersTickerNotPresent:
                 errorMessage = f"Unable to find ticker symbol {usersTickerSymbol}."
-            # Alter the database to reflect a new sucessful entry    
+                # delete the usersquote from usersCurrentTickers
+                usersCurrentTickers.remove(usersQuoteDictEntry)
             else:
-                #Delete the oldest entry
-                db.execute("DELETE FROM Quotes WHERE User=:user AND QuoteNumber = 1", user=user)
-                #Renumber each remaining entry down one
-                for newQuoteNumber in range(1,5):
+                # If there are more than five stocks being tracked, move each QuoteNumber down one (6 becomes 5, 1 becomes 0)
+                if len(usersCurrentTickers) > 5:
+                    usersCurrentTickers = [
+                        entry["QuoteNumber"] - 1 for entry in usersCurrentTickers]
 
-                
-                #Insert new entry at 5 
-        for userQuote in currentListOfStockPrices:
-            if userQuote["price"] <= 0:
-                currentListOfStockPrices.remove(userQuote)
+            # Update the users database with the current ticker symbols and QuoteNumbers only if there is an addition
+            if not errorThrown or not usersTickerNotPresent:
+                # Delete all of the users records
+                db.execute("DELETE FROM Quotes WHERE User = :user", user=user)
 
+                # Insert the revised records back into the database only if its quoteNumber is greater than zero
+                for usersRow in usersCurrentTickers:
+                    if usersRow["quoteNumber"] > 0:
+                        db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
+                            quoteNumber=usersRow["quoteNumber"], user=user, ticker=usersRow["ticker"])
 
         print(currentListOfStockPrices)
 
-        return render_template("printQuotes.html", usersQuotes = currentListOfStockPrices, errorMessage= errorMessage)
+        return render_template("printQuotes.html", usersQuotes=currentListOfStockPrices, errorMessage=errorMessage)
 
-        #return apology("aqui", 403)
-
+        # return apology("aqui", 403)
 
     else:
         # return render_template("quotes.html", usersQuotes=usersQuotes)
