@@ -136,6 +136,12 @@ def quote():
         usersCurrentTickers = db.execute(
             "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
 
+        usersListLength = len(usersCurrentTickers)    
+
+
+        # print(usersCurrentTickers)
+        # return apology("aqui", 403)    
+
         # Prepare error message to user if incomplete form
         if not request.form.get("symbol"):
             errorMessage = "Please fill out ticker symbol."
@@ -146,33 +152,45 @@ def quote():
             # Get the ticker symbol input that the user entered
             usersTickerSymbol = request.form.get("symbol").upper()
 
+            # Create error message if the length is too long?
+            # Test whether usersTickerSymbol is already in usersCurrentTickers list    
             tickerAlreadyPresent = False
 
-            # Create error message if the length is too long?
-            # Check if the ticker symbol is already being tracked by the user
-            for symbol in usersCurrentTickers:
-                if symbol["Ticker"] == usersTickerSymbol:
+            if usersListLength > 0:
+                
+                for symbol in usersCurrentTickers:
+                    if symbol["Ticker"] == usersTickerSymbol:
+                        tickerAlreadyPresent = True
+                        break 
 
-                    tickerAlreadyPresent = True
+                if not tickerAlreadyPresent:
+                     maxQuoteNumber = usersCurrentTickers[-1]["QuoteNumber"] + 1
+            else:
+                maxQuoteNumber = 1
 
-            if not tickerAlreadyPresent:
 
-                maxQuoteNumber = usersCurrentTickers[-1]["QuoteNumber"]
+            # usersTickerSymbol was not present in usersCurrentTickers
+            # if not tickerAlreadyPresent:
+            #     try:
+            #         maxQuoteNumber = usersCurrentTickers[-1]["QuoteNumber"]
+            #     except IndexError:
+            #         maxQuoteNumber = 1
+            #     else:
+            #         maxQuoteNumber = maxQuoteNumber + 1
 
-                if maxQuoteNumber == None:
-                    maxQuoteNumber = 1
+                # if maxQuoteNumber == None:
+                   
                 # elif maxQuoteNumber == 5:
                 #     maxQuoteNumber = 1
                     # db.execute("DELETE FROM Quotes WHERE User=:user AND QuoteNumber = 1", user=user)
-                else:
-                    maxQuoteNumber = maxQuoteNumber + 1
+                
 
                 # Insert the new ticker symbol in a temporary row so it can be tested first
                 # db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (100, :user, :ticker)",
                 #                         user=user, ticker=usersTickerSymbol)
 
                 # Insert usersTickerSymbol into usersCurrentTickers
-                
+            if not tickerAlreadyPresent:
                 usersCurrentTickers.append({
                     "Ticker": usersTickerSymbol, "QuoteNumber": maxQuoteNumber})
 
