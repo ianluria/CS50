@@ -214,8 +214,8 @@ def quote():
 
             # Add price information to list
             for userQuote in usersCurrentTickers:
-                if userQuote["ticker"] == resultTickerSymbol:
-                    userQuote["price"] = result["price"]
+                if userQuote["Ticker"] == resultTickerSymbol:
+                    userQuote["Price"] = result["price"]
 
         if not blankUserTickerEntry:
             # Return an error message if the user did enter a ticker symbol, but it was invalid (not present in API results)
@@ -234,12 +234,13 @@ def quote():
 
                 # Insert the revised records back into the database only if its quoteNumber is greater than zero
                 for usersRow in usersCurrentTickers:
-                    if usersRow["quoteNumber"] > 0:
+                    if usersRow["QuoteNumber"] > 0:
                         db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
-                                   quoteNumber=usersRow["quoteNumber"], user=user, ticker=usersRow["ticker"])
+                                   quoteNumber=usersRow["QuoteNumber"], user=user, ticker=usersRow["Ticker"])
 
-        print(currentListOfStockPrices)
-
+        print(usersCurrentTickers)
+        return apology("aqui", 403)
+        
         return render_template("printQuotes.html", usersQuotes=currentListOfStockPrices, errorMessage=errorMessage)
 
         # return apology("aqui", 403)
