@@ -134,7 +134,7 @@ def quote():
         multipleParametersForAPI = ""
         usersTickerSymbol = ""
 
-        # make a copy of all the existing records for the user in the database
+        # make a copy of all the existing records for the user from the database
         usersCurrentTickers = db.execute(
             "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
 
@@ -147,7 +147,6 @@ def quote():
         if not request.form.get("symbol"):
             errorMessage = "Please fill out ticker symbol."
             blankUserTickerEntry = True
-            # return render_template("messageDisplay.html", message="Please fill out ticker symbol.")
 
         # Get the ticker symbol input that the user entered if the input was not blank
         if not blankUserTickerEntry:
@@ -170,7 +169,7 @@ def quote():
                 multipleParametersForAPI = multipleParametersForAPI + \
                     symbol["Ticker"] + ","
 
-        # usersTickerSymbol is ready to be added to usersCurrentTickers for API call
+        # usersTickerSymbol is not already in list; it's safe to add it to usersCurrentTickers
         if not tickerAlreadyPresentInUsersList and not blankUserTickerEntry:
 
             # Assign a new QuoteNumber for usersTickerSymbol
@@ -188,26 +187,20 @@ def quote():
 
             usersListLength = usersListLength + 1
 
-        #print("user's tickers: ", usersCurrentTickers)
 
         # Remove the trailing comma
         multipleParametersForAPI = multipleParametersForAPI[:-1]
 
-        # print(multipleParametersForAPI)
-
         # Get the JSON results from calling the API with multiple parameters
         lookupResults = lookupMultiple(multipleParametersForAPI)
-
-        #print("lookup results:", lookupResults)
 
         # Notify user if there is an error getting prices and stop execution
         if lookupResults == None:
             return render_template("messageDisplay.html", message="Error getting results.")
 
         usersTickerNotPresent = True
-        # currentListOfStockPrices = []
 
-        # Test whether the usersTickerSymbol is valid and produced a price with the API results
+        # Test whether the usersTickerSymbol is valid by discovering whether it is included in lookupResults
         for result in lookupResults:
 
             resultTickerSymbol = result["symbol"]
@@ -230,16 +223,13 @@ def quote():
                 usersCurrentTickers.remove(usersQuoteDictEntry)
             else:
                 # If there are more than five stocks being tracked, move each QuoteNumber down one (6 becomes 5, 1 becomes 0)
-
                 if usersListLength > 5:
                     for entry in usersCurrentTickers:
                         entry["QuoteNumber"] = entry["QuoteNumber"] - 1 
 
                 usersCurrentTickers = [entry for entry in usersCurrentTickers if entry["QuoteNumber"] > 0]    
 
-                print("after: ", usersCurrentTickers)        
-
-                # Delete all of the users records
+                # Delete all of the users existing records
                 db.execute("DELETE FROM Quotes WHERE User = :user", user=user)
 
                 # Insert the revised records back into the database only if its quoteNumber is greater than zero
