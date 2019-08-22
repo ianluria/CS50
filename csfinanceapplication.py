@@ -222,28 +222,31 @@ def quote():
                 # delete the usersquote from usersCurrentTickers
                 usersCurrentTickers.remove(usersQuoteDictEntry)
             else:
-                # Database needs to be updated to reflect new entry for user's quotes 
 
-                
+                listLengthIsSix = False
+
                 # If there are more than five stocks being tracked, move each QuoteNumber down one (6 becomes 5, 1 becomes 0)
                 if usersListLength > 5:
 
-                    # Delete all of the users existing records
-                    db.execute("DELETE FROM Quotes WHERE User = :user", user=user)
+                    listLengthIsSix = True
 
                     for entry in usersCurrentTickers:
 
-                        newQuoteNumber = entry["QuoteNumber"] - 1
-
-                        if newQuoteNumber > 0:
-                             db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
-                                   quoteNumber=newQuoteNumber, user=user, ticker=entry["Ticker"])
-
-                        entry["QuoteNumber"] = newQuoteNumber
-
-
                     usersCurrentTickers = [entry for entry in usersCurrentTickers if entry["QuoteNumber"] > 0]    
 
+                    # Delete all of the users existing database records
+                    db.execute("DELETE FROM Quotes WHERE User = :user", user=user)
+
+                for entry in usersCurrentTickers:
+                    addToDatabase = True
+
+                    # Only want to add ticker to database if it is not already in there
+                    if not listLengthIsSix and not entry["Ticker"] == usersQuoteDictEntry["Ticker"]:
+                        addToDatabase = False
+
+                    if addToDatabase:
+                        db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
+                                    quoteNumber=entry["QuoteNumber"], user=user, ticker=entry["Ticker"])
 
         # print(usersCurrentTickers)
         # return apology("aqui", 403)
