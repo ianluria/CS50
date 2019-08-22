@@ -237,7 +237,7 @@ def quote():
 
                 usersCurrentTickers = [entry for entry in usersCurrentTickers if entry["QuoteNumber"] > 0]    
 
-                print("after: ", usersCurrentTickers)        
+                # print("after: ", usersCurrentTickers)        
 
                 # Delete all of the users records
                 db.execute("DELETE FROM Quotes WHERE User = :user", user=user)
