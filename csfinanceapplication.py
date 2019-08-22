@@ -222,21 +222,28 @@ def quote():
                 # delete the usersquote from usersCurrentTickers
                 usersCurrentTickers.remove(usersQuoteDictEntry)
             else:
+                # Database needs to be updated to reflect new entry for user's quotes 
+
+                
                 # If there are more than five stocks being tracked, move each QuoteNumber down one (6 becomes 5, 1 becomes 0)
                 if usersListLength > 5:
+
+                    # Delete all of the users existing records
+                    db.execute("DELETE FROM Quotes WHERE User = :user", user=user)
+
                     for entry in usersCurrentTickers:
-                        entry["QuoteNumber"] = entry["QuoteNumber"] - 1 
 
-                usersCurrentTickers = [entry for entry in usersCurrentTickers if entry["QuoteNumber"] > 0]    
+                        newQuoteNumber = entry["QuoteNumber"] - 1
 
-                # Delete all of the users existing records
-                db.execute("DELETE FROM Quotes WHERE User = :user", user=user)
+                        if newQuoteNumber > 0:
+                             db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
+                                   quoteNumber=newQuoteNumber, user=user, ticker=entry["Ticker"])
 
-                # Insert the revised records back into the database only if its quoteNumber is greater than zero
-                for usersRow in usersCurrentTickers:
-                    if usersRow["QuoteNumber"] > 0:
-                        db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
-                                   quoteNumber=usersRow["QuoteNumber"], user=user, ticker=usersRow["Ticker"])
+                        entry["QuoteNumber"] = newQuoteNumber
+
+
+                    usersCurrentTickers = [entry for entry in usersCurrentTickers if entry["QuoteNumber"] > 0]    
+
 
         # print(usersCurrentTickers)
         # return apology("aqui", 403)
