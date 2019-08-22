@@ -240,6 +240,7 @@ def quote():
 
         # print(usersCurrentTickers)
         # return apology("aqui", 403)
+        #test123
         
         return render_template("printQuotes.html", usersQuotes=usersCurrentTickers, errorMessage=errorMessage)
 
