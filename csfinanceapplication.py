@@ -221,8 +221,8 @@ def quote():
                 errorMessage = f"Unable to find ticker symbol {usersTickerSymbol}."
                 # delete the usersquote from usersCurrentTickers
                 usersCurrentTickers.remove(usersQuoteDictEntry)
+            # Users Ticker Symbol is valid and database needs to be updated with the new ticker symbol
             else:
-
                 listLengthIsSix = False
 
                 # If there are more than five stocks being tracked, move each QuoteNumber down one (6 becomes 5, 1 becomes 0)
@@ -232,6 +232,8 @@ def quote():
 
                     for entry in usersCurrentTickers:
 
+                    
+                    
                     usersCurrentTickers = [entry for entry in usersCurrentTickers if entry["QuoteNumber"] > 0]    
 
                     # Delete all of the users existing database records
