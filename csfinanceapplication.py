@@ -228,12 +228,11 @@ def quote():
                 # If there are more than five stocks being tracked, move each QuoteNumber down one (6 becomes 5, 1 becomes 0)
                 if usersListLength > 5:
 
-                    listLengthIsSix = True
+                   listLengthIsSix = True
 
                     for entry in usersCurrentTickers:
+                        entry["QuoteNumber"] = entry["QuoteNumber"] - 1 
 
-                    
-                    
                     usersCurrentTickers = [entry for entry in usersCurrentTickers if entry["QuoteNumber"] > 0]    
 
                     # Delete all of the users existing database records
@@ -249,6 +248,7 @@ def quote():
                     if addToDatabase:
                         db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
                                     quoteNumber=entry["QuoteNumber"], user=user, ticker=entry["Ticker"])
+
 
         # print(usersCurrentTickers)
         # return apology("aqui", 403)
