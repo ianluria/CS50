@@ -127,7 +127,7 @@ def quote():
     if request.method == "POST":
 
         errorMessage = ""
-        blankUserTickerEntry = False
+        errorFound = False
         user = session["username"]
         thisNewQuoteNumber = 0
         usersQuoteDictEntry = {}
@@ -138,7 +138,13 @@ def quote():
         usersCurrentTickers = db.execute(
             "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
 
+        print("first retreival: ", usersCurrentTickers)    
+
         usersListLength = len(usersCurrentTickers)
+
+        # if the usersListLength is empty and the user inputs nothing, return a custom error message
+
+        # when list is full, when user inputs duplicate symbol and then submits a blank quote, the last quote is repeated
 
         # print(usersCurrentTickers)
         # return apology("aqui", 403)
@@ -146,12 +152,14 @@ def quote():
         # Prepare error message to user if incomplete form
         if not request.form.get("symbol"):
             errorMessage = "Please fill out ticker symbol."
-            blankUserTickerEntry = True
+            errorFound = True
 
         # Get the ticker symbol input that the user entered if the input was not blank
-        if not blankUserTickerEntry:
+        if not errorFound:
             usersTickerSymbol = request.form.get("symbol").upper()
 
+        print("Users ticker symbol: ", usersTickerSymbol)
+        
         # Create error message if the length is too long?
 
         # Test whether usersTickerSymbol is already being tracked by the user
@@ -161,16 +169,17 @@ def quote():
 
             for symbol in usersCurrentTickers:
                 # Do not try to find ticker if there is already an error
-                if not blankUserTickerEntry:
+                if not errorFound:
                     if symbol["Ticker"] == usersTickerSymbol:
                         tickerAlreadyPresentInUsersList = True
+                        print("Ticker already in list")
 
                 # Build a string that will be used to query API later
                 multipleParametersForAPI = multipleParametersForAPI + \
                     symbol["Ticker"] + ","
 
         # usersTickerSymbol is not already in list; it's safe to add it to usersCurrentTickers
-        if not tickerAlreadyPresentInUsersList and not blankUserTickerEntry:
+        if not tickerAlreadyPresentInUsersList and not errorFound:
 
             # Assign a new QuoteNumber for usersTickerSymbol
             thisNewQuoteNumber = usersListLength + 1
@@ -186,6 +195,9 @@ def quote():
             usersCurrentTickers.append(usersQuoteDictEntry)
 
             usersListLength = usersListLength + 1
+
+        print("after checking for presence in list: ", usersCurrentTickers)    
+
 
         # Remove the trailing comma
         multipleParametersForAPI = multipleParametersForAPI[:-1]
@@ -205,7 +217,7 @@ def quote():
             resultTickerSymbol = result["symbol"]
 
             # Only check for presence of usersTickerSymbol if there was not a previous error (i.e. no symbol was entered)
-            if not blankUserTickerEntry:
+            if not errorFound:
                 if resultTickerSymbol == usersTickerSymbol:
                     usersTickerNotPresent = False
 
@@ -214,7 +226,7 @@ def quote():
                 if userQuote["Ticker"] == resultTickerSymbol:
                     userQuote["Price"] = result["price"]
 
-        if not blankUserTickerEntry:
+        if not errorFound:
             # Return an error message if the user did enter a ticker symbol, but it was invalid (not present in API results)
             if usersTickerNotPresent:
                 errorMessage = f"Unable to find ticker symbol {usersTickerSymbol}."
@@ -229,28 +241,36 @@ def quote():
 
                     listLengthIsSix = True
 
-                       for entry in usersCurrentTickers:
-                            entry["QuoteNumber"] = entry["QuoteNumber"] - 1
+                    for entry in usersCurrentTickers:
+                        entry["QuoteNumber"] = entry["QuoteNumber"] - 1
 
-                        # Recreate usersCurrentTickers with only QuoteNumbers above 0 (the oldest quote will be removed)
-                        usersCurrentTickers = [entry for entry in usersCurrentTickers if entry["QuoteNumber"] > 0]
+                    # Recreate usersCurrentTickers with only QuoteNumbers above 0 (the oldest quote will be removed)
+                    usersCurrentTickers = [
+                        entry for entry in usersCurrentTickers if entry["QuoteNumber"] > 0]
 
-                        # Delete all of the user's existing database records so revised entries can be added
-                        db.execute(
-                            "DELETE FROM Quotes WHERE User = :user", user=user)
+                    # Delete all of the user's existing database records so revised entries can be added
+                    db.execute(
+                        "DELETE FROM Quotes WHERE User = :user", user=user)
 
+                print("recreated with valid results from API: ", usersCurrentTickers)    
+
+                # Test each entry to see if it needs to be added to database
                 for entry in usersCurrentTickers:
-                    addToDatabase = True
+                    addToDatabase = False
 
-                    # Only want to add ticker to database if it is not already in there
-                    if not listLengthIsSix and not entry["Ticker"] == usersTickerSymbol:
-                        addToDatabase = False
+                    # If the length was six, each ticker needs to be added with its new QuoteNumber
+                    if listLengthIsSix:  
+                        addToDatabase = True
+
+                    # The usersTickerSymbol will be added to the database regardless of the size of usersCurrentTickers (it has passed API test)
+                    if entry["Ticker"] == usersTickerSymbol:
+                        addToDatabase = True
 
                     if addToDatabase:
                         db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
                                    quoteNumber=entry["QuoteNumber"], user=user, ticker=entry["Ticker"])
 
-        # print(usersCurrentTickers)
+        print("final: ", usersCurrentTickers)
         # return apology("aqui", 403)
         # test123
 
