@@ -138,7 +138,7 @@ def quote():
         usersCurrentTickers = db.execute(
             "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
 
-        print("first retreival: ", usersCurrentTickers)    
+        print("first retreival: ", usersCurrentTickers)
 
         usersListLength = len(usersCurrentTickers)
 
@@ -159,11 +159,10 @@ def quote():
             usersTickerSymbol = request.form.get("symbol").upper()
 
         print("Users ticker symbol: ", usersTickerSymbol)
-        
+
         # Create error message if the length is too long?
 
         # Test whether usersTickerSymbol is already being tracked by the user
-        tickerAlreadyPresentInUsersList = False
 
         if usersListLength > 0:
 
@@ -171,7 +170,7 @@ def quote():
                 # Do not try to find ticker if there is already an error
                 if not errorFound:
                     if symbol["Ticker"] == usersTickerSymbol:
-                        tickerAlreadyPresentInUsersList = True
+                        errorFound = True
                         print("Ticker already in list")
 
                 # Build a string that will be used to query API later
@@ -179,7 +178,7 @@ def quote():
                     symbol["Ticker"] + ","
 
         # usersTickerSymbol is not already in list; it's safe to add it to usersCurrentTickers
-        if not tickerAlreadyPresentInUsersList and not errorFound:
+        if not errorFound:
 
             # Assign a new QuoteNumber for usersTickerSymbol
             thisNewQuoteNumber = usersListLength + 1
@@ -196,8 +195,7 @@ def quote():
 
             usersListLength = usersListLength + 1
 
-        print("after checking for presence in list: ", usersCurrentTickers)    
-
+        print("after checking for presence in list: ", usersCurrentTickers)
 
         # Remove the trailing comma
         multipleParametersForAPI = multipleParametersForAPI[:-1]
@@ -252,18 +250,16 @@ def quote():
                     db.execute(
                         "DELETE FROM Quotes WHERE User = :user", user=user)
 
-                print("recreated with valid results from API: ", usersCurrentTickers)    
+                print("recreated with valid results from API: ",
+                      usersCurrentTickers)
 
                 # Test each entry to see if it needs to be added to database
                 for entry in usersCurrentTickers:
                     addToDatabase = False
 
                     # If the length was six, each ticker needs to be added with its new QuoteNumber
-                    if listLengthIsSix:  
-                        addToDatabase = True
-
                     # The usersTickerSymbol will be added to the database regardless of the size of usersCurrentTickers (it has passed API test)
-                    if entry["Ticker"] == usersTickerSymbol:
+                    if listLengthIsSix or entry["Ticker"] == usersTickerSymbol:
                         addToDatabase = True
 
                     if addToDatabase:
