@@ -279,6 +279,63 @@ def quote():
         return render_template("quotes.html")
 
 
+@app.route("/updateQuotes", methods=["GET"])
+def updateQuotes():
+    """Refresh users quotes or delete a specific quote"""
+
+    user = session["username"]
+
+    if request.method == "GET":
+
+        if request.args.get("tickerToDelete"):
+
+            db.execute("DELETE FROM Quotes WHERE User = :user AND Ticker = :tickerToDelete",
+                       user=user, tickerToDelete=request.args.get("tickerToDelete"))
+
+        usersCurrentTickers = db.execute(
+            "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
+
+        print(usersCurrentTickers)
+
+        # make function which takes a list and returns a formatted string for api
+
+        multipleParametersForAPI = ""
+
+        newQuoteNumber = 1
+
+        for entry in usersCurrentTickers:
+
+            # Renumber quotes in case there was a deletion
+            entry["QuoteNumber"] = newQuoteNumber
+
+            newQuoteNumber = newQuoteNumber + 1
+
+            multipleParametersForAPI = multipleParametersForAPI + \
+                entry["Ticker"] + ","
+
+        print("after renumbering ", usersCurrentTickers)
+
+        # Remove the trailing comma
+        multipleParametersForAPI = multipleParametersForAPI[:-1]
+
+        # Get the JSON results from calling the API with multiple parameters
+        lookupResults = lookupMultiple(multipleParametersForAPI)
+
+        # Notify user if there is an error getting prices and stop execution
+        if lookupResults == None:
+            return render_template("printQuotes.html", message="Error getting results.")
+
+        for result in lookupResults:
+
+            # Add price information to usersCurrentTickers
+            for userQuote in usersCurrentTickers:
+
+                if userQuote["Ticker"] == result["symbol"]:
+                    userQuote["Price"] = result["price"]
+
+    return render_template("printQuotes.html", usersQuotes=usersCurrentTickers)
+
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
