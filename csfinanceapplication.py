@@ -205,7 +205,7 @@ def quote():
 
         # Notify user if there is an error getting prices and stop execution
         if lookupResults == None:
-            return render_template("messageDisplay.html", message="Error getting results.")
+            return render_template("printQuotes.html", message="Error getting results.")
 
         # Test whether the usersTickerSymbol is valid by discovering whether it is included in lookupResults
         usersTickerNotPresent = True
