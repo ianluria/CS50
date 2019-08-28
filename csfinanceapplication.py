@@ -283,19 +283,23 @@ def quote():
 def updateQuotes():
     """Refresh users quotes or delete a specific quote"""
 
-    user = session["username"]
-
     if request.method == "GET":
 
+        user = session["username"]
+
+        tickerWasDeleted = False
+
         if request.args.get("tickerToDelete"):
+
+            tickerWasDeleted = True
 
             db.execute("DELETE FROM Quotes WHERE User = :user AND Ticker = :tickerToDelete",
                        user=user, tickerToDelete=request.args.get("tickerToDelete"))
 
         usersCurrentTickers = db.execute(
-            "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
+            "SELECT Ticker FROM Quotes WHERE User = :user", user=user)
 
-        print(usersCurrentTickers)
+        print("update quotes first: ", usersCurrentTickers)    
 
         # make function which takes a list and returns a formatted string for api
 
@@ -306,14 +310,14 @@ def updateQuotes():
         for entry in usersCurrentTickers:
 
             # Renumber quotes in case there was a deletion
-            entry["QuoteNumber"] = newQuoteNumber
-
-            newQuoteNumber = newQuoteNumber + 1
-
+            if tickerWasDeleted:
+                db.execute("UPDATE Quotes SET QuoteNumber = :quoteNumber WHERE User = :user AND Ticker = :ticker",
+                           quoteNumber=newQuoteNumber, user=user, ticker=entry["Ticker"])
+                #entry["QuoteNumber"] = newQuoteNumber
+                newQuoteNumber = newQuoteNumber + 1
+            # Build string of tickers for API query
             multipleParametersForAPI = multipleParametersForAPI + \
                 entry["Ticker"] + ","
-
-        print("after renumbering ", usersCurrentTickers)
 
         # Remove the trailing comma
         multipleParametersForAPI = multipleParametersForAPI[:-1]
@@ -324,6 +328,8 @@ def updateQuotes():
         # Notify user if there is an error getting prices and stop execution
         if lookupResults == None:
             return render_template("printQuotes.html", message="Error getting results.")
+
+        print("update quotes last: ", usersCurrentTickers)
 
         for result in lookupResults:
 
