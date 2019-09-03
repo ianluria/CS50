@@ -49,7 +49,82 @@ def index():
 @login_required
 def buy():
     """Buy shares of stock"""
-    return apology("TODO")
+
+    # User reached route via POST (as by submitting a form via POST)
+    if request.method == "POST":
+
+        if not request.form.get("symbol"):
+            return apology("must provide symbol", 403)
+
+        # Ensure password was submitted
+        elif not request.form.get("number"):
+            return apology("must provide number", 403)
+
+        usersTickerSymbol = request.form.get("symbol")
+
+        if len(usersTickerSymbol) > 5:
+            return apology("length", 403)
+
+        numberOfSharesToBuy = request.form.get("number")
+
+        if numberOfSharesToBuy <= 0:
+            return apology("share error", 403)
+
+        thisUser = session["username"]
+
+        thisUsersCash = db.execute("SELECT cash FROM users WHERE username = :username",
+                                   username=thisUser)
+
+        apiSearchResults = lookup(usersTickerSymbol)
+
+        if apiSearchResults == None:
+            return apology("ticker symbol api error", 403)
+
+        print(apiSearchResults)
+
+        stockPrice = apiSearchResults["price"]
+
+        thisTransactionsTotal = stockPrice * numberOfSharesToBuy
+
+        if thisTransactionsTotal > thisUsersCash:
+            return apology("out of cash", 403)
+        else:
+
+            newCashBalance = thisUsersCash - thisTransactionsTotal
+
+            db.execute("UPDATE users SET cash = :newCashBalance WHERE username = :username",
+                       username=thisUser, newCashBalance=newCashBalance)
+
+            db.execute("INSERT INTO Holdings (User, Ticker, Shares) VALUES (:username, :usersTickerSymbol, :numberOfSharesToBuy",
+                       userName=thisUser, usersTickerSymbol=usersTickerSymbol, numberOfSharesToBuy=numberOfSharesToBuy)
+
+            # insert record into history
+
+        return apology("reached end", 1000)
+
+    # if ticker symbols is beyond a certain number of characters, reject
+
+    # get api data for ticker symbol
+
+    # multiply share price by number of shares from user
+
+    # check if there is enough money for purchase
+
+    # if there is
+
+    # subtract the money
+
+    # add purchase to users records
+
+    # make a copy of the transaction to history list
+
+    # if there is not enough money
+
+    # return an error message with reminder about the current balance
+
+    # return a page which states whether the purchase was successful and lists the current share price for the stock
+    else:
+        return render_template("buy.html")
 
 
 @app.route("/check", methods=["GET"])
@@ -138,16 +213,11 @@ def quote():
         usersCurrentTickers = db.execute(
             "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
 
-        print("first retreival: ", usersCurrentTickers)
-
         usersListLength = len(usersCurrentTickers)
 
         # if the usersListLength is empty and the user inputs nothing, return a custom error message
 
         # when list is full, when user inputs duplicate symbol and then submits a blank quote, the last quote is repeated
-
-        # print(usersCurrentTickers)
-        # return apology("aqui", 403)
 
         # Prepare error message to user if incomplete form
         if not request.form.get("symbol"):
@@ -157,8 +227,6 @@ def quote():
         # Get the ticker symbol input that the user entered if the input was not blank
         if not errorFound:
             usersTickerSymbol = request.form.get("symbol").upper()
-
-        print("Users ticker symbol: ", usersTickerSymbol)
 
         # Create error message if the length is too long?
 
@@ -171,7 +239,6 @@ def quote():
                 if not errorFound:
                     if symbol["Ticker"] == usersTickerSymbol:
                         errorFound = True
-                        print("Ticker already in list")
 
                 # Build a string that will be used to query API later
                 multipleParametersForAPI = multipleParametersForAPI + \
@@ -194,8 +261,6 @@ def quote():
             usersCurrentTickers.append(usersQuoteDictEntry)
 
             usersListLength = usersListLength + 1
-
-        print("after checking for presence in list: ", usersCurrentTickers)
 
         # Remove the trailing comma
         multipleParametersForAPI = multipleParametersForAPI[:-1]
@@ -250,9 +315,6 @@ def quote():
                     db.execute(
                         "DELETE FROM Quotes WHERE User = :user", user=user)
 
-                print("recreated with valid results from API: ",
-                      usersCurrentTickers)
-
                 # Test each entry to see if it needs to be added to database
                 for entry in usersCurrentTickers:
                     addToDatabase = False
@@ -266,9 +328,7 @@ def quote():
                         db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
                                    quoteNumber=entry["QuoteNumber"], user=user, ticker=entry["Ticker"])
 
-        print("final: ", usersCurrentTickers)
         # return apology("aqui", 403)
-        # test123
 
         return render_template("printQuotes.html", usersQuotes=usersCurrentTickers, errorMessage=errorMessage)
 
@@ -299,7 +359,7 @@ def updateQuotes():
         usersCurrentTickers = db.execute(
             "SELECT Ticker FROM Quotes WHERE User = :user", user=user)
 
-        print("update quotes first: ", usersCurrentTickers)    
+        # print("update quotes first: ", usersCurrentTickers)
 
         # make function which takes a list and returns a formatted string for api
 
@@ -329,7 +389,7 @@ def updateQuotes():
         if lookupResults == None:
             return render_template("printQuotes.html", message="Error getting results.")
 
-        print("update quotes last: ", usersCurrentTickers)
+        # print("update quotes last: ", usersCurrentTickers)
 
         for result in lookupResults:
 
