@@ -65,7 +65,7 @@ def buy():
         if len(usersTickerSymbol) > 5:
             return apology("length", 403)
 
-        numberOfSharesToBuy = request.form.get("number")
+        numberOfSharesToBuy = int(request.form.get("number"))
 
         if numberOfSharesToBuy <= 0:
             return apology("share error", 403)
@@ -75,14 +75,22 @@ def buy():
         thisUsersCash = db.execute("SELECT cash FROM users WHERE username = :username",
                                    username=thisUser)
 
+        thisUsersCash = thisUsersCash[0]["cash"]
+
+
+
+        print(thisUsersCash)
+
         apiSearchResults = lookup(usersTickerSymbol)
 
         if apiSearchResults == None:
             return apology("ticker symbol api error", 403)
 
-        print(apiSearchResults)
+        
 
         stockPrice = apiSearchResults["price"]
+
+        print(stockPrice)
 
         thisTransactionsTotal = stockPrice * numberOfSharesToBuy
 
@@ -95,8 +103,8 @@ def buy():
             db.execute("UPDATE users SET cash = :newCashBalance WHERE username = :username",
                        username=thisUser, newCashBalance=newCashBalance)
 
-            db.execute("INSERT INTO Holdings (User, Ticker, Shares) VALUES (:username, :usersTickerSymbol, :numberOfSharesToBuy",
-                       userName=thisUser, usersTickerSymbol=usersTickerSymbol, numberOfSharesToBuy=numberOfSharesToBuy)
+            db.execute("INSERT INTO Holdings (User, Ticker, Shares) VALUES (:username, :usersTickerSymbol, :numberOfSharesToBuy)",
+                       username=thisUser, usersTickerSymbol=usersTickerSymbol, numberOfSharesToBuy=numberOfSharesToBuy)
 
             # insert record into history
 
@@ -187,9 +195,6 @@ def logout():
     # Forget any user_id
     session.clear()
 
-    # Clear any existing list of stock quotes
-    currentListOfStockPrices.clear()
-
     # Redirect user to login form
     return redirect("/")
 
@@ -270,7 +275,7 @@ def quote():
 
         # Notify user if there is an error getting prices and stop execution
         if lookupResults == None:
-            return render_template("printQuotes.html", message="Error getting results.")
+            return render_template("printQuotes.html", message="Error getting results.", parentPage="quotes.html")
 
         # Test whether the usersTickerSymbol is valid by discovering whether it is included in lookupResults
         usersTickerNotPresent = True
@@ -330,7 +335,7 @@ def quote():
 
         # return apology("aqui", 403)
 
-        return render_template("printQuotes.html", usersQuotes=usersCurrentTickers, errorMessage=errorMessage)
+        return render_template("printQuotes.html", usersQuotes=usersCurrentTickers, errorMessage=errorMessage, parentPage="quotes.html")
 
         # return apology("aqui", 403)
 
@@ -387,7 +392,7 @@ def updateQuotes():
 
         # Notify user if there is an error getting prices and stop execution
         if lookupResults == None:
-            return render_template("printQuotes.html", message="Error getting results.")
+            return render_template("printQuotes.html", message="Error getting results.", parentPage="quotes.html")
 
         # print("update quotes last: ", usersCurrentTickers)
 
@@ -399,7 +404,7 @@ def updateQuotes():
                 if userQuote["Ticker"] == result["symbol"]:
                     userQuote["Price"] = result["price"]
 
-    return render_template("printQuotes.html", usersQuotes=usersCurrentTickers)
+    return render_template("printQuotes.html", usersQuotes=usersCurrentTickers, parentPage="quotes.html")
 
 
 @app.route("/register", methods=["GET", "POST"])
