@@ -47,12 +47,14 @@ def index():
     usersCurrentHoldings = db.execute(
         "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
 
+    print(usersCurrentHoldings)
+
     parameterForAPI = ""
-    listOfHoldings = []
+    # listOfHoldings = []
 
     for holding in usersCurrentHoldings:
-        listOfHoldings.append(
-            {"ticker": holding["Ticker"], "shares": holding["Shares"]})
+        # listOfHoldings.append(
+        #     {"ticker": holding["Ticker"], "shares": holding["Shares"]})
 
         parameterForAPI = parameterForAPI + holding["Ticker"] + ","
 
@@ -66,13 +68,14 @@ def index():
     if lookupResults == None:
         return apology("Error getting results", 404)
 
-    # print(lookupResults)
+    print("lookup results", lookupResults)
 
     for result in lookupResults:
-        next(item for item in listOfHoldings if item["ticker"] == result["symbol"])[
-            "price"] = result["price"]
+       for holding in usersCurrentHoldings:
+        if holding["Ticker"] == result["symbol"]:
+            holding.update({"Price":result["price"]})
 
-    print(listOfHoldings)
+    print(usersCurrentHoldings)
     # get users holdings
 
     # gather all tickers for api call
@@ -101,7 +104,7 @@ def buy():
         elif not request.form.get("number"):
             return apology("must provide number", 403)
 
-        usersTickerSymbol = request.form.get("symbol")
+        usersTickerSymbol = request.form.get("symbol").upper()
 
         if len(usersTickerSymbol) > 5:
             return apology("length", 403)
@@ -118,7 +121,7 @@ def buy():
 
         thisUsersCash = thisUsersCash[0]["cash"]
 
-        print(thisUsersCash)
+        # print(thisUsersCash)
 
         apiSearchResults = lookup(usersTickerSymbol)
 
@@ -127,7 +130,7 @@ def buy():
 
         stockPrice = apiSearchResults["price"]
 
-        print(stockPrice)
+        # print(stockPrice)
 
         thisTransactionsTotal = stockPrice * numberOfSharesToBuy
 
