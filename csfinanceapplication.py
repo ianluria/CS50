@@ -275,7 +275,7 @@ def quote():
 
         # Notify user if there is an error getting prices and stop execution
         if lookupResults == None:
-            return render_template("printQuotes.html", message="Error getting results.", parentPage="quotes.html")
+            return render_template("printQuotes.html", message="Error getting results.")
 
         # Test whether the usersTickerSymbol is valid by discovering whether it is included in lookupResults
         usersTickerNotPresent = True
@@ -335,7 +335,7 @@ def quote():
 
         # return apology("aqui", 403)
 
-        return render_template("printQuotes.html", usersQuotes=usersCurrentTickers, errorMessage=errorMessage, parentPage="quotes.html")
+        return render_template("printQuotes.html", usersQuotes=usersCurrentTickers, errorMessage=errorMessage)
 
         # return apology("aqui", 403)
 
@@ -392,7 +392,7 @@ def updateQuotes():
 
         # Notify user if there is an error getting prices and stop execution
         if lookupResults == None:
-            return render_template("printQuotes.html", message="Error getting results.", parentPage="quotes.html")
+            return render_template("printQuotes.html", message="Error getting results.")
 
         # print("update quotes last: ", usersCurrentTickers)
 
@@ -404,7 +404,7 @@ def updateQuotes():
                 if userQuote["Ticker"] == result["symbol"]:
                     userQuote["Price"] = result["price"]
 
-    return render_template("printQuotes.html", usersQuotes=usersCurrentTickers, parentPage="quotes.html")
+    return render_template("printQuotes.html", usersQuotes=usersCurrentTickers)
 
 
 @app.route("/register", methods=["GET", "POST"])
