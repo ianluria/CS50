@@ -41,6 +41,40 @@ db = SQL("sqlite:///finance.db")
 @login_required
 def index():
     """Show portfolio of stocks"""
+
+    thisUser = session["username"]
+ 
+    usersCurrentHoldings = db.execute(
+            "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
+
+    parameterForAPI = ""
+
+    for holding in usersCurrentHoldings:
+        parameterForAPI = parameterForAPI + holding["Ticker"]
+
+    # Remove the trailing comma
+    parameterForAPI = parameterForAPI[:-1]
+
+    # Get the JSON results from calling the API with multiple parameters
+    lookupResults = lookupMultiple(parameterForAPI)
+
+    # Notify user if there is an error getting prices and stop execution
+    if lookupResults == None:
+        return apology("Error getting results", 404)
+
+    print(lookupResults)    
+
+    # get users holdings
+
+    # gather all tickers for api call
+
+    # add all relevant api data to a list
+
+    # calculate total value of stock
+
+    # add up all the values and combine with cash holding for total portfolio value
+
+
     print("home!")
     return apology("home!")
 
