@@ -43,14 +43,18 @@ def index():
     """Show portfolio of stocks"""
 
     thisUser = session["username"]
- 
+
     usersCurrentHoldings = db.execute(
-            "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
+        "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
 
     parameterForAPI = ""
+    listOfHoldings = []
 
     for holding in usersCurrentHoldings:
-        parameterForAPI = parameterForAPI + holding["Ticker"]
+        listOfHoldings.append(
+            {"ticker": holding["Ticker"], "shares": holding["Shares"]})
+
+        parameterForAPI = parameterForAPI + holding["Ticker"] + ","
 
     # Remove the trailing comma
     parameterForAPI = parameterForAPI[:-1]
@@ -62,8 +66,13 @@ def index():
     if lookupResults == None:
         return apology("Error getting results", 404)
 
-    print(lookupResults)    
+    # print(lookupResults)
 
+    for result in lookupResults:
+        next(item for item in listOfHoldings if item["ticker"] == result["symbol"])[
+            "price"] = result["price"]
+
+    print(listOfHoldings)
     # get users holdings
 
     # gather all tickers for api call
@@ -74,8 +83,6 @@ def index():
 
     # add up all the values and combine with cash holding for total portfolio value
 
-
-    print("home!")
     return apology("home!")
 
 
@@ -111,16 +118,12 @@ def buy():
 
         thisUsersCash = thisUsersCash[0]["cash"]
 
-
-
         print(thisUsersCash)
 
         apiSearchResults = lookup(usersTickerSymbol)
 
         if apiSearchResults == None:
             return apology("ticker symbol api error", 403)
-
-        
 
         stockPrice = apiSearchResults["price"]
 
