@@ -68,14 +68,34 @@ def index():
     if lookupResults == None:
         return apology("Error getting results", 404)
 
-    print("lookup results", lookupResults)
+    #print("lookup results", lookupResults)
+
+    totalValueOfUsersStocks = 0
 
     for result in lookupResults:
-       for holding in usersCurrentHoldings:
-        if holding["Ticker"] == result["symbol"]:
-            holding.update({"Price":result["price"]})
+        for holding in usersCurrentHoldings:
+            if holding["Ticker"] == result["symbol"]:
+                thisPrice = result["price"]
+                thisValue = holding["Shares"] * thisPrice
+                totalValueOfUsersStocks = totalValueOfUsersStocks + thisValue
+                thisValue = usd(thisValue)
+                thisPrice = usd(thisPrice)
+                holding.update(
+                    {"Price": thisPrice, "TotalValue": thisValue})
 
-    print(usersCurrentHoldings)
+    currentCashBalance = db.execute("SELECT cash FROM users WHERE username = :username",
+                                    username=thisUser)
+
+    currentCashBalance = currentCashBalance[0]["cash"]
+
+    usersPortfolioValue = usd(currentCashBalance + totalValueOfUsersStocks)
+
+    currentCashBalance = usd(currentCashBalance)
+
+    return render_template("index.html", usersCurrentHoldings=usersCurrentHoldings, currentCashBalance=currentCashBalance, usersPortfolioValue=usersPortfolioValue)
+
+    # print(usersCurrentHoldings)
+
     # get users holdings
 
     # gather all tickers for api call
@@ -86,7 +106,7 @@ def index():
 
     # add up all the values and combine with cash holding for total portfolio value
 
-    return apology("home!")
+    #return apology("home!")
 
 
 @app.route("/buy", methods=["GET", "POST"])
