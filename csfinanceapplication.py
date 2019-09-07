@@ -94,20 +94,6 @@ def index():
 
     return render_template("index.html", usersCurrentHoldings=usersCurrentHoldings, currentCashBalance=currentCashBalance, usersPortfolioValue=usersPortfolioValue)
 
-    # print(usersCurrentHoldings)
-
-    # get users holdings
-
-    # gather all tickers for api call
-
-    # add all relevant api data to a list
-
-    # calculate total value of stock
-
-    # add up all the values and combine with cash holding for total portfolio value
-
-    #return apology("home!")
-
 
 @app.route("/buy", methods=["GET", "POST"])
 @login_required
@@ -513,7 +499,69 @@ def register():
 @login_required
 def sell():
     """Sell shares of stock"""
+
+    thisUser = session["username"]
+
+    usersCurrentHoldings = db.execute(
+        "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
+
+    if request.method == "GET":
+
+        return render_template("sell.html", usersCurrentHoldings=usersCurrentHoldings)
+    elif request.method == "POST":
+
+        tickerToSell = request.form.get("symbol")
+        sharesToSell = request.form.get("shares")
+
+        for holding in usersCurrentHoldings:
+            if holding["Ticker"] == tickerToSell:
+
+                numberOfSharesUserOwns = holding["Shares"]
+
+                # Create an error if the user tries to sell more shares than he/she owns
+                if numberOfSharesUserOwns > sharesToSell:
+                    return apology("TODO")
+
+                # Get the current pricing information
+                thisLookupResults = lookup(tickerToSell)
+
+                thisSalePrice = thisLookupResults['price']
+
+                proceeds = thisSalePrice * numberOfSharesUserOwns
+
+                thisUsersCash = db.execute("SELECT cash FROM users WHERE username = :username",
+                                           username=thisUser)
+
+                # How much cash the user now has after the sale
+                thisUsersCash = thisUsersCash + proceeds
+
+                db.execute("UPDATE users SET cash = :newCashBalance WHERE username = :username",
+                           username=thisUser, newCashBalance=thisUsersCash)
+
+                # Delete the holding from Holdings if all the shares are being sold
+                if numberOfSharesUserOwns == sharesToSell:
+                    db.execute("DELETE FROM Holdings WHERE User = :user AND Ticker = :tickerToDelete",
+                               user=thisUser, tickerToDelete=tickerToSell)
+                # Else, update the number of shares the user owns
+                else:
+                    db.execute("UPDATE Holdings SET Shares = :shares WHERE username = :username",
+                               username=thisUser, shares=numberOfSharesUserOwns-sharesToSell)
+
+                returnString = f"{sharesToSell} shares of {tickerToSell} sold at {thisSalePrice} for a total of {proceeds}."
+
+                return render_template("sell.html", message=returnString)
+
     return apology("TODO")
+
+    # get a list of users current Holdings
+    # if get
+    # return template with list of users tickers and number of shares
+    # else if post
+    # update holdings with new number of shares given the users input
+    # if number of shares to sell equals the total number of shares
+    # remove the holding from the database
+
+    # add the proceeds of the sale to the users cash balance
 
 
 def errorhandler(e):
