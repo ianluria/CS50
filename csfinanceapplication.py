@@ -48,7 +48,7 @@ def index():
     usersCurrentHoldings = db.execute(
         "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
 
-    print(usersCurrentHoldings)
+    # print(usersCurrentHoldings)
 
     parameterForAPI = ""
     # listOfHoldings = []
@@ -117,8 +117,13 @@ def buy():
 
         numberOfSharesToBuy = int(request.form.get("number"))
 
+        # Return an error if the user enters zero or less shares to buy
         if numberOfSharesToBuy <= 0:
             return apology("share error", 403)
+
+        # Return an error if the user enters an non whole number of shares to buy
+        if not float(numberOfSharesToBuy).is_integer():
+                return apology("must be whole number", 403)
 
         thisUser = session["username"]
 
@@ -148,10 +153,10 @@ def buy():
             db.execute("INSERT INTO Holdings (User, Ticker, Shares) VALUES (:username, :usersTickerSymbol, :numberOfSharesToBuy)",
                        username=thisUser, usersTickerSymbol=usersTickerSymbol, numberOfSharesToBuy=numberOfSharesToBuy)
 
-            db.execute("INSERT INTO History VALUES (:ticker, :price, :dateTime, :type, :user)",
+            db.execute("INSERT INTO History (Ticker, Price, DateTime, Type, User) VALUES (:ticker, :price, :dateTime, :type, :user)",
                        ticker=usersTickerSymbol, price=stockPrice, dateTime=datetime.datetime.now().strftime("%d-%m-%Y %H:%M"), type="BUY", user=thisUser)
 
-        return redirect("/")
+        return render_template("messageDisplay.html", message=f"{thisUser} purchased {numberOfSharesToBuy} of {usersTickerSymbol} at {usd(stockPrice)} per share for a total of {usd(thisTransactionsTotal)}.")
 
     # make a copy of the transaction to history list
 
@@ -362,8 +367,6 @@ def quote():
                         db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
                                    quoteNumber=entry["QuoteNumber"], user=user, ticker=entry["Ticker"])
 
-        # return apology("aqui", 403)
-
         return render_template("printQuotes.html", usersQuotes=usersCurrentTickers, errorMessage=errorMessage)
 
         # return apology("aqui", 403)
@@ -491,17 +494,34 @@ def sell():
     if request.method == "GET":
 
         return render_template("sell.html", usersCurrentHoldings=usersCurrentHoldings)
+
     elif request.method == "POST":
+
+        if not request.form.get("symbol"):
+            return apology("must provide symbol", 403)
+
+        elif not request.form.get("shares"):
+            return apology("must provide shares", 403)
 
         tickerToSell = request.form.get("symbol").upper()
         sharesToSell = request.form.get("shares")
+
+        # Error if ticker symbol is too long
+        if len(tickerToSell) > 5:
+            return apology("length", 403)
+
+        # Return an error if the user enters zero or less shares to buy
+        if sharesToSell <= 0:
+            return apology("share error", 403)
+
+        # Return an error if the user enters an non whole number of shares to buy
+        if not float(sharesToSell).is_integer():
+                return apology("must be whole number", 403)
 
         for holding in usersCurrentHoldings:
             if holding["Ticker"] == tickerToSell:
 
                 numberOfSharesUserOwns = holding["Shares"]
-
-                # create error for negative number of shares trying to be sold
 
                 # Create an error if the user tries to sell more shares than he/she owns
                 if numberOfSharesUserOwns < sharesToSell:
@@ -510,9 +530,12 @@ def sell():
                 # Get the current pricing information
                 thisLookupResults = lookup(tickerToSell)
 
+                if not thisLookupResults:
+                    return apology("Error getting API results", 403)
+
                 thisSalePrice = thisLookupResults['price']
 
-                proceeds = thisSalePrice * numberOfSharesUserOwns
+                proceeds = thisSalePrice * sharesToSell
 
                 thisUsersCash = db.execute("SELECT cash FROM users WHERE username = :username",
                                            username=thisUser)
@@ -534,12 +557,12 @@ def sell():
                                username=thisUser, shares=numberOfSharesUserOwns-sharesToSell)
 
                 # Add the sell trasaction to history
-                db.execute("INSERT INTO History VALUES (:ticker, :price, :dateTime, :type, :user)",
-                       ticker=tickerToSell, price=thisSalePrice, dateTime=datetime.datetime.now().strftime("%d-%m-%Y %H:%M"), type="SELL", user=thisUser)               
+                db.execute("INSERT INTO History (Ticker, Price, DateTime, Type, User) VALUES (:ticker, :price, :dateTime, :type, :user)",
+                           ticker=tickerToSell, price=thisSalePrice, dateTime=datetime.datetime.now().strftime("%d-%m-%Y %H:%M"), type="SELL", user=thisUser)
 
-                returnString = f"{sharesToSell} shares of {tickerToSell} sold at {thisSalePrice} for a total of {proceeds}."
+                returnString = f"{sharesToSell} shares of {tickerToSell} sold at {uds(thisSalePrice)} for a total of {usd(proceeds) }."
 
-                return render_template("sell.html", message=returnString)
+                return render_template("messageDisplay.html", message=returnString)
 
     return apology("TODO")
 
