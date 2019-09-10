@@ -48,28 +48,11 @@ def index():
     usersCurrentHoldings = db.execute(
         "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
 
-    # print(usersCurrentHoldings)
-
-    parameterForAPI = ""
-    # listOfHoldings = []
-
-    for holding in usersCurrentHoldings:
-        # listOfHoldings.append(
-        #     {"ticker": holding["Ticker"], "shares": holding["Shares"]})
-
-        parameterForAPI = parameterForAPI + holding["Ticker"] + ","
-
-    # Remove the trailing comma
-    parameterForAPI = parameterForAPI[:-1]
-
-    # Get the JSON results from calling the API with multiple parameters
-    lookupResults = lookupMultiple(parameterForAPI)
+   lookupResults = getAPIResultsWithMultipleTickers(usersCurrentHoldings)
 
     # Notify user if there is an error getting prices and stop execution
-    if lookupResults == None:
+    if lookupResults == "Error":
         return apology("Error getting results", 404)
-
-    # print("lookup results", lookupResults)
 
     totalValueOfUsersStocks = 0
 
