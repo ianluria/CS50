@@ -476,9 +476,20 @@ def sell():
 
     if request.method == "GET":
 
+        lookupResults = getAPIResultsWithMultipleTickers(usersCurrentHoldings)
 
+        if lookupResults == "Error":
+            return apology("Cannot find user's holdings", 403)
+        else:
 
-        return render_template("sell.html", usersCurrentHoldings=usersCurrentHoldings)
+            usersCurrentHoldings = []
+
+            # Build a list of tickers and prices to show the user to sell
+            for result in lookupResults:
+
+                usersCurrentHoldings.append({"ticker":result["symbol"],"price":usd(result['price'])})
+
+            return render_template("sell.html", usersCurrentHoldings=usersCurrentHoldings)
 
     elif request.method == "POST":
 
