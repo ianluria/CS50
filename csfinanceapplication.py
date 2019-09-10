@@ -48,7 +48,7 @@ def index():
     usersCurrentHoldings = db.execute(
         "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
 
-   lookupResults = getAPIResultsWithMultipleTickers(usersCurrentHoldings)
+    lookupResults = getAPIResultsWithMultipleTickers(usersCurrentHoldings)
 
     # Notify user if there is an error getting prices and stop execution
     if lookupResults == "Error":
@@ -106,7 +106,7 @@ def buy():
 
         # Return an error if the user enters an non whole number of shares to buy
         if not float(numberOfSharesToBuy).is_integer():
-                return apology("must be whole number", 403)
+            return apology("must be whole number", 403)
 
         thisUser = session["username"]
 
@@ -487,7 +487,8 @@ def sell():
             # Build a list of tickers and prices to show the user to sell
             for result in lookupResults:
 
-                usersCurrentHoldings.append({"ticker":result["symbol"],"price":usd(result['price'])})
+                usersCurrentHoldings.append(
+                    {"ticker": result["symbol"], "price": usd(result['price'])})
 
             return render_template("sell.html", usersCurrentHoldings=usersCurrentHoldings)
 
@@ -512,7 +513,7 @@ def sell():
 
         # Return an error if the user enters an non whole number of shares to buy
         if not float(sharesToSell).is_integer():
-                return apology("must be whole number", 403)
+            return apology("must be whole number", 403)
 
         for holding in usersCurrentHoldings:
             if holding["Ticker"] == tickerToSell:
