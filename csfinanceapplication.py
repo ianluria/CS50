@@ -8,7 +8,7 @@ from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from helpers import apology, login_required, lookup, usd, lookupMultiple
+from helpers import apology, login_required, lookup, usd, lookupMultiple, getAPIResultsWithMultipleTickers
 
 # Configure application
 app = Flask(__name__)
@@ -493,6 +493,8 @@ def sell():
 
     if request.method == "GET":
 
+
+
         return render_template("sell.html", usersCurrentHoldings=usersCurrentHoldings)
 
     elif request.method == "POST":
@@ -560,7 +562,7 @@ def sell():
                 db.execute("INSERT INTO History (Ticker, Price, DateTime, Type, User) VALUES (:ticker, :price, :dateTime, :type, :user)",
                            ticker=tickerToSell, price=thisSalePrice, dateTime=datetime.datetime.now().strftime("%d-%m-%Y %H:%M"), type="SELL", user=thisUser)
 
-                returnString = f"{sharesToSell} shares of {tickerToSell} sold at {uds(thisSalePrice)} for a total of {usd(proceeds) }."
+                returnString = f"{sharesToSell} shares of {tickerToSell} sold at {uds(thisSalePrice)} for a total of {usd(proceeds)}."
 
                 return render_template("messageDisplay.html", message=returnString)
 
