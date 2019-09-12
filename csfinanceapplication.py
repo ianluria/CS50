@@ -106,10 +106,14 @@ def buy():
         usersHolding = db.execute(
             "SELECT Shares FROM Holdings WHERE User = :user AND Ticker = :ticker", user=thisUser, ticker=usersTickerSymbol)
 
-        numberOfSharesUserOwns = usersHolding["Shares"]
+        # print(usersHolding)
 
-        if not usersHolding:
+        numberOfSharesUserOwns = 0
+
+        # If the user already owns shares, update numberOfSharesUserOwns, else remember that the user does not own any shares
+        if usersHolding:
             userAlreadyOwnsShares = True
+            numberOfSharesUserOwns = usersHolding[0]["Shares"]
 
         numberOfSharesToBuy = int(request.form.get("number"))
 
