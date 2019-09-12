@@ -98,6 +98,19 @@ def buy():
         if len(usersTickerSymbol) > 5:
             return apology("length", 403)
 
+        thisUser = session["username"]
+
+        userAlreadyOwnsShares = False
+
+        # Check if user already owns shares of usersTickerSymbol
+        usersHolding = db.execute(
+            "SELECT Shares FROM Holdings WHERE User = :user AND Ticker = :ticker", user=thisUser, ticker=usersTickerSymbol)
+
+        numberOfSharesUserOwns = usersHolding["Shares"]
+
+        if not usersHolding:
+            userAlreadyOwnsShares = True
+
         numberOfSharesToBuy = int(request.form.get("number"))
 
         # Return an error if the user enters zero or less shares to buy
@@ -107,8 +120,6 @@ def buy():
         # Return an error if the user enters an non whole number of shares to buy
         if not float(numberOfSharesToBuy).is_integer():
             return apology("must be whole number", 403)
-
-        thisUser = session["username"]
 
         thisUsersCash = db.execute("SELECT cash FROM users WHERE username = :username",
                                    username=thisUser)
@@ -133,13 +144,20 @@ def buy():
             db.execute("UPDATE users SET cash = :newCashBalance WHERE username = :username",
                        username=thisUser, newCashBalance=newCashBalance)
 
-            db.execute("INSERT INTO Holdings (User, Ticker, Shares) VALUES (:username, :usersTickerSymbol, :numberOfSharesToBuy)",
-                       username=thisUser, usersTickerSymbol=usersTickerSymbol, numberOfSharesToBuy=numberOfSharesToBuy)
+            # Update the number of shares the user now owns
+            numberOfSharesUserOwns = numberOfSharesUserOwns + numberOfSharesToBuy
+
+            if userAlreadyOwnsShares:
+                db.execute("UPDATE Holdings SET Shares=:shares WHERE User=:user AND Ticker=:ticker",
+                           shares=numberOfSharesUserOwns, user=thisUser, ticker=usersTickerSymbol)
+            else:
+                db.execute("INSERT INTO Holdings (User, Ticker, Shares) VALUES (:username, :usersTickerSymbol, :numberOfSharesToBuy)",
+                           username=thisUser, usersTickerSymbol=usersTickerSymbol, numberOfSharesToBuy=numberOfSharesToBuy)
 
             db.execute("INSERT INTO History (Ticker, Price, DateTime, Type, User) VALUES (:ticker, :price, :dateTime, :type, :user)",
                        ticker=usersTickerSymbol, price=stockPrice, dateTime=datetime.datetime.now().strftime("%d-%m-%Y %H:%M"), type="BUY", user=thisUser)
 
-        return render_template("messageDisplay.html", message=f"{thisUser} purchased {numberOfSharesToBuy} of {usersTickerSymbol} at {usd(stockPrice)} per share for a total of {usd(thisTransactionsTotal)}.")
+        return render_template("messageDisplay.html", message=f"Purchased {numberOfSharesToBuy} shares of {usersTickerSymbol} at {usd(stockPrice)} per share for a total of {usd(thisTransactionsTotal)}.")
 
     # make a copy of the transaction to history list
 
