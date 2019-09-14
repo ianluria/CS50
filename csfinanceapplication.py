@@ -121,10 +121,6 @@ def buy():
         if numberOfSharesToBuy <= 0:
             return apology("share error", 403)
 
-        # Return an error if the user enters an non whole number of shares to buy
-        if not float(numberOfSharesToBuy).is_integer():
-            return apology("must be whole number", 403)
-
         thisUsersCash = db.execute("SELECT cash FROM users WHERE username = :username",
                                    username=thisUser)
 
@@ -142,7 +138,6 @@ def buy():
         if thisTransactionsTotal > thisUsersCash:
             return apology("out of cash", 403)
         else:
-
             newCashBalance = thisUsersCash - thisTransactionsTotal
 
             db.execute("UPDATE users SET cash = :newCashBalance WHERE username = :username",
@@ -158,8 +153,8 @@ def buy():
                 db.execute("INSERT INTO Holdings (User, Ticker, Shares) VALUES (:username, :usersTickerSymbol, :numberOfSharesToBuy)",
                            username=thisUser, usersTickerSymbol=usersTickerSymbol, numberOfSharesToBuy=numberOfSharesToBuy)
 
-            db.execute("INSERT INTO History (Ticker, Price, DateTime, Type, User) VALUES (:ticker, :price, :dateTime, :type, :user)",
-                       ticker=usersTickerSymbol, price=stockPrice, dateTime=datetime.datetime.now().strftime("%d-%m-%Y %H:%M"), type="BUY", user=thisUser)
+            db.execute("INSERT INTO History (Ticker, Price, DateTime, Type, User, NumberOfShares) VALUES (:ticker, :price, :dateTime, :type, :user, :numberOfShares)",
+                       ticker=usersTickerSymbol, price=stockPrice, dateTime=datetime.datetime.now().strftime("%d-%m-%Y %H:%M"), type="BUY", user=thisUser, numberOfShares=numberOfSharesToBuy)
 
         return render_template("messageDisplay.html", message=f"Purchased {numberOfSharesToBuy} shares of {usersTickerSymbol} at {usd(stockPrice)} per share for a total of {usd(thisTransactionsTotal)}.")
 
@@ -523,7 +518,7 @@ def sell():
             return apology("must provide shares", 403)
 
         tickerToSell = request.form.get("symbol").upper()
-        sharesToSell = request.form.get("shares")
+        sharesToSell = int(request.form.get("shares"))
 
         # Error if ticker symbol is too long
         if len(tickerToSell) > 5:
@@ -533,10 +528,6 @@ def sell():
         if sharesToSell <= 0:
             return apology("share error", 403)
 
-        # Return an error if the user enters an non whole number of shares to buy
-        if not float(sharesToSell).is_integer():
-            return apology("must be whole number", 403)
-
         for holding in usersCurrentHoldings:
             if holding["Ticker"] == tickerToSell:
 
@@ -544,7 +535,7 @@ def sell():
 
                 # Create an error if the user tries to sell more shares than he/she owns
                 if numberOfSharesUserOwns < sharesToSell:
-                    return apology("TODO")
+                    return apology("Selling more shares than you own", 403)
 
                 # Get the current pricing information
                 thisLookupResults = lookup(tickerToSell)
@@ -572,28 +563,18 @@ def sell():
                 # Else, update the number of shares the user owns
                 #!!!
                 else:
-                    db.execute("UPDATE Holdings SET Shares = :shares WHERE username = :username",
-                               username=thisUser, shares=numberOfSharesUserOwns-sharesToSell)
+                    db.execute("UPDATE Holdings SET Shares = :shares WHERE User = :username AND Ticker = :tickerSold",
+                               username=thisUser, shares=numberOfSharesUserOwns-sharesToSell, tickerSold=tickerToSell)
 
                 # Add the sell trasaction to history
-                db.execute("INSERT INTO History (Ticker, Price, DateTime, Type, User) VALUES (:ticker, :price, :dateTime, :type, :user)",
-                           ticker=tickerToSell, price=thisSalePrice, dateTime=datetime.datetime.now().strftime("%d-%m-%Y %H:%M"), type="SELL", user=thisUser)
+                db.execute("INSERT INTO History (Ticker, Price, DateTime, Type, User, NumberOfShares) VALUES (:ticker, :price, :dateTime, :type, :user, :numberOfShares)",
+                           ticker=tickerToSell, price=thisSalePrice, dateTime=datetime.datetime.now().strftime("%d-%m-%Y %H:%M"), type="SELL", user=thisUser, numberOfShares=sharesToSell)
 
                 returnString = f"{sharesToSell} shares of {tickerToSell} sold at {uds(thisSalePrice)} for a total of {usd(proceeds)}."
 
                 return render_template("messageDisplay.html", message=returnString)
 
     return apology("TODO")
-
-    # get a list of users current Holdings
-    # if get
-    # return template with list of users tickers and number of shares
-    # else if post
-    # update holdings with new number of shares given the users input
-    # if number of shares to sell equals the total number of shares
-    # remove the holding from the database
-
-    # add the proceeds of the sale to the users cash balance
 
 
 def errorhandler(e):
