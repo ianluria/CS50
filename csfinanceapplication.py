@@ -8,7 +8,7 @@ from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from helpers import apology, login_required, lookup, usd, lookupMultiple, getAPIResultsWithMultipleTickers
+from helpers import apology, login_required, lookup, usd, lookupMultiple, getAPIResultsWithMultipleTickers, prepareUsersCurrentHoldingsForDisplay
 
 # Configure application
 app = Flask(__name__)
@@ -50,10 +50,6 @@ def index():
 
     lookupResults = getAPIResultsWithMultipleTickers(usersCurrentHoldings)
 
-    # Notify user if there is an error getting prices and stop execution
-    if lookupResults == "Error":
-        return apology("Error getting results", 404)
-
     totalValueOfUsersStocks = 0
 
     for result in lookupResults:
@@ -84,6 +80,18 @@ def index():
 def buy():
     """Buy shares of stock"""
 
+    thisUser = session["username"]
+
+    usersCurrentHoldings = db.execute(
+        "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
+
+    if request.method == "GET":
+
+        usersCurrentHoldings = prepareUsersCurrentHoldingsForDisplay(
+            usersCurrentHoldings)
+
+        return render_template("buy.html", usersCurrentHoldings=usersCurrentHoldings)
+
     # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
 
@@ -98,22 +106,11 @@ def buy():
         if len(usersTickerSymbol) > 5:
             return apology("length", 403)
 
-        thisUser = session["username"]
-
-        userAlreadyOwnsShares = False
-
-        # Check if user already owns shares of usersTickerSymbol
-        usersHolding = db.execute(
-            "SELECT Shares FROM Holdings WHERE User = :user AND Ticker = :ticker", user=thisUser, ticker=usersTickerSymbol)
-
-        # print(usersHolding)
-
         numberOfSharesUserOwns = 0
 
-        # If the user already owns shares, update numberOfSharesUserOwns, else remember that the user does not own any shares
-        if usersHolding:
-            userAlreadyOwnsShares = True
-            numberOfSharesUserOwns = usersHolding[0]["Shares"]
+        for holding in usersCurrentHoldings:
+            if holding["Ticker"] == usersTickerSymbol:
+                numberOfSharesUserOwns = holding["Shares"]
 
         numberOfSharesToBuy = int(request.form.get("number"))
 
@@ -144,11 +141,11 @@ def buy():
                        username=thisUser, newCashBalance=newCashBalance)
 
             # Update the number of shares the user now owns
-            numberOfSharesUserOwns = numberOfSharesUserOwns + numberOfSharesToBuy
+            newNumberOfShares = numberOfSharesUserOwns + numberOfSharesToBuy
 
-            if userAlreadyOwnsShares:
+            if numberOfSharesUserOwns > 0:
                 db.execute("UPDATE Holdings SET Shares=:shares WHERE User=:user AND Ticker=:ticker",
-                           shares=numberOfSharesUserOwns, user=thisUser, ticker=usersTickerSymbol)
+                           shares=newNumberOfShares, user=thisUser, ticker=usersTickerSymbol)
             else:
                 db.execute("INSERT INTO Holdings (User, Ticker, Shares) VALUES (:username, :usersTickerSymbol, :numberOfSharesToBuy)",
                            username=thisUser, usersTickerSymbol=usersTickerSymbol, numberOfSharesToBuy=numberOfSharesToBuy)
@@ -157,16 +154,6 @@ def buy():
                        ticker=usersTickerSymbol, price=stockPrice, dateTime=datetime.datetime.now().strftime("%d-%m-%Y %H:%M"), type="BUY", user=thisUser, numberOfShares=numberOfSharesToBuy)
 
         return render_template("messageDisplay.html", message=f"Purchased {numberOfSharesToBuy} shares of {usersTickerSymbol} at {usd(stockPrice)} per share for a total of {usd(thisTransactionsTotal)}.")
-
-    # make a copy of the transaction to history list
-
-    # if there is not enough money
-
-    # return an error message with reminder about the current balance
-
-    # return a page which states whether the purchase was successful and lists the current share price for the stock
-    else:
-        return render_template("buy.html")
 
 
 @app.route("/check", methods=["GET"])
