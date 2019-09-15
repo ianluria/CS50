@@ -526,7 +526,7 @@ def sell():
         if len(tickerToSell) > 5:
             return apology("length", 403)
 
-        # Return an error if the user enters zero or less shares to buy
+        # Return an error if the user enters zero or fewer shares to buy
         if sharesToSell <= 0:
             return apology("share error", 403)
 
@@ -553,7 +553,7 @@ def sell():
                                            username=thisUser)
 
                 # How much cash the user now has after the sale
-                thisUsersCash = thisUsersCash + proceeds
+                thisUsersCash = thisUsersCash[0]["cash"] + proceeds
 
                 db.execute("UPDATE users SET cash = :newCashBalance WHERE username = :username",
                            username=thisUser, newCashBalance=thisUsersCash)
@@ -572,7 +572,7 @@ def sell():
                 db.execute("INSERT INTO History (Ticker, Price, DateTime, Type, User, NumberOfShares) VALUES (:ticker, :price, :dateTime, :type, :user, :numberOfShares)",
                            ticker=tickerToSell, price=thisSalePrice, dateTime=datetime.datetime.now().strftime("%d-%m-%Y %H:%M"), type="SELL", user=thisUser, numberOfShares=sharesToSell)
 
-                returnString = f"{sharesToSell} shares of {tickerToSell} sold at {uds(thisSalePrice)} for a total of {usd(proceeds)}."
+                returnString = f"{sharesToSell} shares of {tickerToSell} sold at {usd(thisSalePrice)} for a total of {usd(proceeds)}."
 
                 return render_template("messageDisplay.html", message=returnString)
 
