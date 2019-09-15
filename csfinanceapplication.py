@@ -76,7 +76,7 @@ def index():
 
     currentCashBalance = usd(currentCashBalance)
 
-    return render_template("index.html", usersCurrentHoldings=usersCurrentHoldings, currentCashBalance=currentCashBalance, usersPortfolioValue=usersPortfolioValue)
+    return render_template("index.html", usersCurrentHoldings=usersCurrentHoldings, currentCashBalance=currentCashBalance, usersPortfolioValue=usersPortfolioValue, thisUser=thisUser)
 
 
 @app.route("/buy", methods=["GET", "POST"])
@@ -507,19 +507,20 @@ def sell():
 
                     if holding["Ticker"] == result["symbol"]:
                         holding["Price"] = result["price"]
+                        break
 
             return render_template("sell.html", usersCurrentHoldings=usersCurrentHoldings)
 
     elif request.method == "POST":
 
-        if not request.form.get("symbol"):
+        if not request.form.get("tickerToSell"):
             return apology("must provide symbol", 403)
 
-        elif not request.form.get("shares"):
+        elif not request.form.get("numberOfShares"):
             return apology("must provide shares", 403)
 
-        tickerToSell = request.form.get("symbol").upper()
-        sharesToSell = int(request.form.get("shares"))
+        tickerToSell = request.form.get("tickerToSell").upper()
+        sharesToSell = int(request.form.get("numberOfShares"))
 
         # Error if ticker symbol is too long
         if len(tickerToSell) > 5:
