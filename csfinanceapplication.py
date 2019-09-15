@@ -480,23 +480,10 @@ def sell():
 
     if request.method == "GET":
 
-        # Get current pricing information for each stock held by user
-        lookupResults = getAPIResultsWithMultipleTickers(usersCurrentHoldings)
+        usersCurrentHoldings = prepareUsersCurrentHoldingsForDisplay(
+            usersCurrentHoldings)
 
-        if lookupResults == "Error":
-            return apology("Cannot find user's holdings", 403)
-        else:
-
-            # Add the current per share price to each dictionary in usersCurrentHoldings
-            for holding in usersCurrentHoldings:
-
-                for result in lookupResults:
-
-                    if holding["Ticker"] == result["symbol"]:
-                        holding["Price"] = result["price"]
-                        break
-
-            return render_template("sell.html", usersCurrentHoldings=usersCurrentHoldings)
+        return render_template("sell.html", usersCurrentHoldings=usersCurrentHoldings)
 
     elif request.method == "POST":
 
