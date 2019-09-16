@@ -90,7 +90,7 @@ def buy():
         usersCurrentHoldings = prepareUsersCurrentHoldingsForDisplay(
             usersCurrentHoldings)
 
-        return render_template("buy.html", usersCurrentHoldings=usersCurrentHoldings)
+        return render_template("displayHoldings.html", usersCurrentHoldings=usersCurrentHoldings, parentPage="buy")
 
     # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
@@ -483,7 +483,7 @@ def sell():
         usersCurrentHoldings = prepareUsersCurrentHoldingsForDisplay(
             usersCurrentHoldings)
 
-        return render_template("sell.html", usersCurrentHoldings=usersCurrentHoldings)
+        return render_template("displayHoldings.html", usersCurrentHoldings=usersCurrentHoldings, parentPage="sell")
 
     elif request.method == "POST":
 
