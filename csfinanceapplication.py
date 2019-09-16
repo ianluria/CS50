@@ -172,6 +172,12 @@ def history():
     usersHistory = db.execute("SELECT * FROM History WHERE User = :username",
                               username=thisUser)
 
+    for record in usersHistory:
+
+        record["DateTime"] = datetime.datetime.strptime(record["DateTime"], "%d-%m-%Y %H:%M")
+
+        record["DateTime"] = datetime.datetime.strftime(record["DateTime"], "%x %I:%M")
+
     return render_template("history.html", usersHistory=usersHistory, thisUser=thisUser)
 
 
