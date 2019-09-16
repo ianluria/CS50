@@ -169,10 +169,10 @@ def history():
 
     thisUser = session["username"]
 
-    usersHistory = db.execute("SELECT * FROM History WHERE username = :username",
+    usersHistory = db.execute("SELECT * FROM History WHERE User = :username",
                               username=thisUser)
 
-    return render_template("history.html", usersHistory=usersHistory)
+    return render_template("history.html", usersHistory=usersHistory, thisUser=thisUser)
 
 
 @app.route("/login", methods=["GET", "POST"])
