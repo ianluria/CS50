@@ -166,7 +166,13 @@ def check():
 @login_required
 def history():
     """Show history of transactions"""
-    return apology("TODO")
+
+    thisUser = session["username"]
+
+    usersHistory = db.execute("SELECT * FROM History WHERE username = :username",
+                              username=thisUser)
+
+    return render_template("history.html", usersHistory=usersHistory)
 
 
 @app.route("/login", methods=["GET", "POST"])
