@@ -174,9 +174,11 @@ def history():
 
     for record in usersHistory:
 
-        record["DateTime"] = datetime.datetime.strptime(record["DateTime"], "%d-%m-%Y %H:%M")
+        record["DateTime"] = datetime.datetime.strptime(
+            record["DateTime"], "%d-%m-%Y %H:%M")
 
-        record["DateTime"] = datetime.datetime.strftime(record["DateTime"], "%x %I:%M")
+        record["DateTime"] = datetime.datetime.strftime(
+            record["DateTime"], "%x %I:%M")
 
     return render_template("history.html", usersHistory=usersHistory, thisUser=thisUser)
 
@@ -517,6 +519,7 @@ def sell():
             return apology("share error", 403)
 
         for holding in usersCurrentHoldings:
+            # User does own shares of the ticker to sell
             if holding["Ticker"] == tickerToSell:
 
                 numberOfSharesUserOwns = holding["Shares"]
@@ -549,7 +552,6 @@ def sell():
                     db.execute("DELETE FROM Holdings WHERE User = :user AND Ticker = :tickerToDelete",
                                user=thisUser, tickerToDelete=tickerToSell)
                 # Else, update the number of shares the user owns
-                #!!!
                 else:
                     db.execute("UPDATE Holdings SET Shares = :shares WHERE User = :username AND Ticker = :tickerSold",
                                username=thisUser, shares=numberOfSharesUserOwns-sharesToSell, tickerSold=tickerToSell)
@@ -562,7 +564,7 @@ def sell():
 
                 return render_template("messageDisplay.html", message=returnString)
 
-    return apology("TODO")
+    return apology(f"Could not find {tickerToSell} in your portfolio.", 403)
 
 
 def errorhandler(e):
