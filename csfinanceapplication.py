@@ -557,7 +557,7 @@ def sell():
                                            username=thisUser)
 
                 # How much cash the user now has after the sale
-                thisUsersCash = thisUsersCash[0]["cash"] + proceeds
+                thisUsersCash = round(thisUsersCash[0]["cash"] + proceeds,2)
 
                 db.execute("UPDATE users SET cash = :newCashBalance WHERE username = :username",
                            username=thisUser, newCashBalance=thisUsersCash)
