@@ -128,7 +128,7 @@ def buy():
         if apiSearchResults == None:
             return apology("ticker symbol api error", 403)
 
-        stockPrice = apiSearchResults["price"]
+        stockPrice = round(apiSearchResults["price"],2)
 
         thisTransactionsTotal = stockPrice * numberOfSharesToBuy
 
