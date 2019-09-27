@@ -128,7 +128,7 @@ def buy():
         if apiSearchResults == None:
             return apology("ticker symbol api error", 403)
 
-        stockPrice = round(apiSearchResults["price"],2)
+        stockPrice = round(apiSearchResults["price"], 2)
 
         thisTransactionsTotal = stockPrice * numberOfSharesToBuy
 
@@ -254,19 +254,23 @@ def logout():
 def quote():
     """Get stock quote."""
 
-    if request.method == "POST":
+    user = session["username"]
+
+    # make a copy of all the existing records for the user from the database
+    usersCurrentTickers = db.execute(
+        "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
+
+    if request.method == "GET":
+        return render_template("quotes.html", usersQuotes=usersCurrentTickers)
+
+    elif request.method == "POST":
 
         errorMessage = ""
         errorFound = False
-        user = session["username"]
         thisNewQuoteNumber = 0
         usersQuoteDictEntry = {}
         multipleParametersForAPI = ""
         usersTickerSymbol = ""
-
-        # make a copy of all the existing records for the user from the database
-        usersCurrentTickers = db.execute(
-            "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
 
         usersListLength = len(usersCurrentTickers)
 
@@ -283,16 +287,19 @@ def quote():
         if not errorFound:
             usersTickerSymbol = request.form.get("symbol").upper()
 
-        # Create error message if the length is too long?
+        # Create error message if the length is too long
+        if len(usersTickerSymbol) > 5:
+            errorMessage = "Ticker symbol is too long."
+            errorFound = True
 
         # Test whether usersTickerSymbol is already being tracked by the user
-
         if usersListLength > 0:
 
             for symbol in usersCurrentTickers:
                 # Do not try to find ticker if there is already an error
                 if not errorFound:
                     if symbol["Ticker"] == usersTickerSymbol:
+                        # Create error because the ticker is already being tracked
                         errorFound = True
 
                 # Build a string that will be used to query API later
@@ -324,7 +331,7 @@ def quote():
         lookupResults = lookupMultiple(multipleParametersForAPI)
 
         # Notify user if there is an error getting prices and stop execution
-        if lookupResults == None:
+        if not lookupResults:
             return render_template("printQuotes.html", message="Error getting results.")
 
         # Test whether the usersTickerSymbol is valid by discovering whether it is included in lookupResults
@@ -343,6 +350,7 @@ def quote():
             for userQuote in usersCurrentTickers:
                 if userQuote["Ticker"] == resultTickerSymbol:
                     userQuote["Price"] = result["price"]
+                    
 
         if not errorFound:
             # Return an error message if the user did enter a ticker symbol, but it was invalid (not present in API results)
@@ -384,12 +392,6 @@ def quote():
                                    quoteNumber=entry["QuoteNumber"], user=user, ticker=entry["Ticker"])
 
         return render_template("printQuotes.html", usersQuotes=usersCurrentTickers, errorMessage=errorMessage)
-
-        # return apology("aqui", 403)
-
-    else:
-        # return render_template("quotes.html", usersQuotes=usersQuotes)
-        return render_template("quotes.html")
 
 
 @app.route("/updateQuotes", methods=["GET"])
@@ -557,7 +559,7 @@ def sell():
                                            username=thisUser)
 
                 # How much cash the user now has after the sale
-                thisUsersCash = round(thisUsersCash[0]["cash"] + proceeds,2)
+                thisUsersCash = round(thisUsersCash[0]["cash"] + proceeds, 2)
 
                 db.execute("UPDATE users SET cash = :newCashBalance WHERE username = :username",
                            username=thisUser, newCashBalance=thisUsersCash)
