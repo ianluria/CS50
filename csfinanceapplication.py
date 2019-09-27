@@ -350,7 +350,7 @@ def quote():
             for userQuote in usersCurrentTickers:
                 if userQuote["Ticker"] == resultTickerSymbol:
                     userQuote["Price"] = result["price"]
-                    
+                    break
 
         if not errorFound:
             # Return an error message if the user did enter a ticker symbol, but it was invalid (not present in API results)
