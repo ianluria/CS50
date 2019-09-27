@@ -294,7 +294,7 @@ def quote():
 
         # Test whether usersTickerSymbol is already being tracked by the user
         if usersListLength > 0:
-
+            
             for symbol in usersCurrentTickers:
                 # Do not try to find ticker if there is already an error
                 if not errorFound:
