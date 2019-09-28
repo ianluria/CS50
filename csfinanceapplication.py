@@ -260,8 +260,12 @@ def quote():
     usersCurrentTickers = db.execute(
         "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
 
-    if request.method == "GET":
+    # Transform list of dictionaries into a dictionary of dictionaries
+    usersCurrentTickers = {dictEntry["Ticker"]: {
+        "QuoteNumber": dictEntry["QuoteNumber"]} for dictEntry in usersCurrentTickers}
 
+    if request.method == "GET":
+        # This will need to be fixed
          usersCurrentHoldings = prepareUsersCurrentHoldingsForDisplay(
             usersCurrentHoldings)
 
@@ -299,16 +303,11 @@ def quote():
         # Test whether usersTickerSymbol is already being tracked by the user
         if usersListLength > 0:
             
-            for symbol in usersCurrentTickers:
-                # Do not try to find ticker if there is already an error
-                if not errorFound:
-                    if symbol["Ticker"] == usersTickerSymbol:
-                        # Create error because the ticker is already being tracked
-                        errorFound = True
-
-                # Build a string that will be used to query API later
-                multipleParametersForAPI = multipleParametersForAPI + \
-                    symbol["Ticker"] + ","
+            # Do not try to find ticker if there is already an error
+            if not errorFound:
+                if usersTickerSymbol in usersCurrentTickers:
+                    # Create error because the ticker is already being tracked
+                    errorFound = True
 
         # usersTickerSymbol is not already in list; it's safe to add it to usersCurrentTickers
         if not errorFound:
@@ -316,20 +315,14 @@ def quote():
             # Assign a new QuoteNumber for usersTickerSymbol
             thisNewQuoteNumber = usersListLength + 1
 
-            # Add usersTickerSymbol to API call string
-            multipleParametersForAPI = multipleParametersForAPI + \
-                usersTickerSymbol + ","
+            # Add usersTickerSymbol to dictionary
+            usersCurrentTickers[usersTickerSymbol] = {"QuoteNumber": thisNewQuoteNumber}
 
-            usersQuoteDictEntry = {
-                "Ticker": usersTickerSymbol, "QuoteNumber": thisNewQuoteNumber}
+            # Update the length of usersCurrentTickers
+            usersListLength = len(usersCurrentTickers)
 
-            # Insert usersQuoteDictEntry into usersCurrentTickers
-            usersCurrentTickers.append(usersQuoteDictEntry)
-
-            usersListLength = usersListLength + 1
-
-        # Remove the trailing comma
-        multipleParametersForAPI = multipleParametersForAPI[:-1]
+        # Create a string of all the ticker symbols on the dictionary
+        multipleParametersForAPI = ",".join(usersCurrentTickers.keys())
 
         # Get the JSON results from calling the API with multiple parameters
         lookupResults = lookupMultiple(multipleParametersForAPI)
@@ -351,17 +344,14 @@ def quote():
                     usersTickerNotPresent = False
 
             # Add price information to usersCurrentTickers
-            for userQuote in usersCurrentTickers:
-                if userQuote["Ticker"] == resultTickerSymbol:
-                    userQuote["Price"] = result["price"]
-                    break
+            usersCurrentTickers[resultTickerSymbol]["Price"] = result["price"]
 
         if not errorFound:
             # Return an error message if the user did enter a ticker symbol, but it was invalid (not present in API results)
             if usersTickerNotPresent:
                 errorMessage = f"Unable to find ticker symbol {usersTickerSymbol}."
-                # delete the usersquote from usersCurrentTickers
-                usersCurrentTickers.remove(usersQuoteDictEntry)
+                # Delete the usersquote from usersCurrentTickers
+                usersCurrentTickers.pop(usersTickerSymbol)
             # Else, usersTickerSymbol is valid and database needs to be updated with the new ticker symbol
             else:
                 listLengthIsSix = False
@@ -371,8 +361,7 @@ def quote():
 
                     listLengthIsSix = True
 
-                    usersCurrentTickers = [tickerDict for tickerDict in usersCurrentTickers if tickerDict["QuoteNumber"] - 1 > 0]
-
+                    usersCurrentTickers = {ticker: usersCurrentTickers[ticker] for ticker in usersCurrentTickers if usersCurrentTickers[ticker]["QuoteNumber"]-1>0}
 
                     # for entry in usersCurrentTickers:
                     #     entry["QuoteNumber"] = entry["QuoteNumber"] - 1
@@ -390,12 +379,11 @@ def quote():
                   
                     # If the length was six, each ticker needs to be added with its new QuoteNumber
                     # The usersTickerSymbol will be added to the database regardless of the size of usersCurrentTickers (it has passed API test)
-                    if listLengthIsSix or entry["Ticker"] == usersTickerSymbol:
+                    if listLengthIsSix or usersCurrentTickers[entry]["Ticker"] == usersTickerSymbol:
                         db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
-                                   quoteNumber=entry["QuoteNumber"], user=user, ticker=entry["Ticker"])
+                                   quoteNumber=usersCurrentTickers[entry]["QuoteNumber"], user=user, ticker=entry)
 
         return render_template("printQuotes.html", usersQuotes=usersCurrentTickers, errorMessage=errorMessage)
-
 
 @app.route("/updateQuotes", methods=["GET"])
 def updateQuotes():
