@@ -269,7 +269,7 @@ def quote():
         usersCurrentHoldings = prepareUsersCurrentHoldingsForDisplay(
             usersCurrentTickers)
 
-        return render_template("printQuotes.html", usersCurrentHoldings=usersCurrentHoldings)
+        return render_template("printQuotes.html", usersQuotes=usersCurrentHoldings)
 
     elif request.method == "POST":
 
