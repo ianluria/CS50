@@ -266,11 +266,11 @@ def quote():
 
     if request.method == "GET":
         # This will need to be fixed
-         usersCurrentHoldings = prepareUsersCurrentHoldingsForDisplay(
-            usersCurrentHoldings)
+        usersCurrentHoldings = prepareUsersCurrentHoldingsForDisplay(
+            usersCurrentTickers)
 
-        return render_template("displayHoldings.html", usersCurrentHoldings=usersCurrentHoldings, parentPage="quote")
-        
+        return render_template("printQuotes.html", usersCurrentHoldings=usersCurrentHoldings)
+
     elif request.method == "POST":
 
         errorMessage = ""
@@ -302,7 +302,7 @@ def quote():
 
         # Test whether usersTickerSymbol is already being tracked by the user
         if usersListLength > 0:
-            
+
             # Do not try to find ticker if there is already an error
             if not errorFound:
                 if usersTickerSymbol in usersCurrentTickers:
@@ -316,7 +316,8 @@ def quote():
             thisNewQuoteNumber = usersListLength + 1
 
             # Add usersTickerSymbol to dictionary
-            usersCurrentTickers[usersTickerSymbol] = {"QuoteNumber": thisNewQuoteNumber}
+            usersCurrentTickers[usersTickerSymbol] = {
+                "QuoteNumber": thisNewQuoteNumber}
 
             # Update the length of usersCurrentTickers
             usersListLength = len(usersCurrentTickers)
@@ -361,7 +362,8 @@ def quote():
 
                     listLengthIsSix = True
 
-                    usersCurrentTickers = {ticker: usersCurrentTickers[ticker] for ticker in usersCurrentTickers if usersCurrentTickers[ticker]["QuoteNumber"]-1>0}
+                    usersCurrentTickers = {
+                        ticker: usersCurrentTickers[ticker] for ticker in usersCurrentTickers if usersCurrentTickers[ticker]["QuoteNumber"]-1 > 0}
 
                     # for entry in usersCurrentTickers:
                     #     entry["QuoteNumber"] = entry["QuoteNumber"] - 1
@@ -376,7 +378,7 @@ def quote():
 
                 # Test each entry to see if it needs to be added to database
                 for entry in usersCurrentTickers:
-                  
+
                     # If the length was six, each ticker needs to be added with its new QuoteNumber
                     # The usersTickerSymbol will be added to the database regardless of the size of usersCurrentTickers (it has passed API test)
                     if listLengthIsSix or usersCurrentTickers[entry]["Ticker"] == usersTickerSymbol:
@@ -384,6 +386,7 @@ def quote():
                                    quoteNumber=usersCurrentTickers[entry]["QuoteNumber"], user=user, ticker=entry)
 
         return render_template("printQuotes.html", usersQuotes=usersCurrentTickers, errorMessage=errorMessage)
+
 
 @app.route("/updateQuotes", methods=["GET"])
 def updateQuotes():
