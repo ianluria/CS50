@@ -261,8 +261,12 @@ def quote():
         "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
 
     if request.method == "GET":
-        return render_template("quotes.html", usersQuotes=usersCurrentTickers)
 
+         usersCurrentHoldings = prepareUsersCurrentHoldingsForDisplay(
+            usersCurrentHoldings)
+
+        return render_template("displayHoldings.html", usersCurrentHoldings=usersCurrentHoldings, parentPage="quote")
+        
     elif request.method == "POST":
 
         errorMessage = ""
@@ -367,12 +371,15 @@ def quote():
 
                     listLengthIsSix = True
 
-                    for entry in usersCurrentTickers:
-                        entry["QuoteNumber"] = entry["QuoteNumber"] - 1
+                    usersCurrentTickers = [tickerDict for tickerDict in usersCurrentTickers if tickerDict["QuoteNumber"] - 1 > 0]
 
-                    # Recreate usersCurrentTickers with only QuoteNumbers above 0 (the oldest quote will be removed)
-                    usersCurrentTickers = [
-                        entry for entry in usersCurrentTickers if entry["QuoteNumber"] > 0]
+
+                    # for entry in usersCurrentTickers:
+                    #     entry["QuoteNumber"] = entry["QuoteNumber"] - 1
+
+                    # # Recreate usersCurrentTickers with only QuoteNumbers above 0 (the oldest quote will be removed)
+                    # usersCurrentTickers = [
+                    #     entry for entry in usersCurrentTickers if entry["QuoteNumber"] > 0]
 
                     # Delete all of the user's existing database records so revised entries can be added
                     db.execute(
@@ -380,14 +387,10 @@ def quote():
 
                 # Test each entry to see if it needs to be added to database
                 for entry in usersCurrentTickers:
-                    addToDatabase = False
-
+                  
                     # If the length was six, each ticker needs to be added with its new QuoteNumber
                     # The usersTickerSymbol will be added to the database regardless of the size of usersCurrentTickers (it has passed API test)
                     if listLengthIsSix or entry["Ticker"] == usersTickerSymbol:
-                        addToDatabase = True
-
-                    if addToDatabase:
                         db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
                                    quoteNumber=entry["QuoteNumber"], user=user, ticker=entry["Ticker"])
 
