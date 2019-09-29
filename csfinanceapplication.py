@@ -322,34 +322,18 @@ def quote():
             # Update the length of usersCurrentTickers
             usersListLength = len(usersCurrentTickers)
 
-        # Create a string of all the ticker symbols on the dictionary
-        multipleParametersForAPI = ",".join(usersCurrentTickers.keys())
-
-        # Get the JSON results from calling the API with multiple parameters
-        lookupResults = lookupMultiple(multipleParametersForAPI)
-
-        # Notify user if there is an error getting prices and stop execution
-        if not lookupResults:
-            return render_template("printQuotes.html", message="Error getting results.")
+        usersCurrentTickers = prepareUsersCurrentHoldingsForDisplay(
+            usersCurrentTickers)
 
         # Test whether the usersTickerSymbol is valid by discovering whether it is included in lookupResults
-        usersTickerNotPresent = True
 
-        for result in lookupResults:
-
-            resultTickerSymbol = result["symbol"]
-
-            # Only check for presence of usersTickerSymbol if there was not a previous error (i.e. no symbol was entered)
-            if not errorFound:
-                if resultTickerSymbol == usersTickerSymbol:
-                    usersTickerNotPresent = False
-
-            # Add price information to usersCurrentTickers
-            usersCurrentTickers[resultTickerSymbol]["Price"] = result["price"]
-
+        # Only check for presence of usersTickerSymbol if there was not a previous error (i.e. no symbol was entered)
         if not errorFound:
+
+            usersTickerPresentInAPIResults = "Price" in usersCurrentTickers[usersTickerSymbol]
+
             # Return an error message if the user did enter a ticker symbol, but it was invalid (not present in API results)
-            if usersTickerNotPresent:
+            if not usersTickerPresentInAPIResults:
                 errorMessage = f"Unable to find ticker symbol {usersTickerSymbol}."
                 # Delete the usersquote from usersCurrentTickers
                 usersCurrentTickers.pop(usersTickerSymbol)
@@ -365,13 +349,6 @@ def quote():
                     usersCurrentTickers = {
                         ticker: usersCurrentTickers[ticker] for ticker in usersCurrentTickers if usersCurrentTickers[ticker]["QuoteNumber"]-1 > 0}
 
-                    # for entry in usersCurrentTickers:
-                    #     entry["QuoteNumber"] = entry["QuoteNumber"] - 1
-
-                    # # Recreate usersCurrentTickers with only QuoteNumbers above 0 (the oldest quote will be removed)
-                    # usersCurrentTickers = [
-                    #     entry for entry in usersCurrentTickers if entry["QuoteNumber"] > 0]
-
                     # Delete all of the user's existing database records so revised entries can be added
                     db.execute(
                         "DELETE FROM Quotes WHERE User = :user", user=user)
@@ -381,7 +358,7 @@ def quote():
 
                     # If the length was six, each ticker needs to be added with its new QuoteNumber
                     # The usersTickerSymbol will be added to the database regardless of the size of usersCurrentTickers (it has passed API test)
-                    if listLengthIsSix or usersCurrentTickers[entry]["Ticker"] == usersTickerSymbol:
+                    if listLengthIsSix or entry == usersTickerSymbol:
                         db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
                                    quoteNumber=usersCurrentTickers[entry]["QuoteNumber"], user=user, ticker=entry)
 
@@ -396,57 +373,35 @@ def updateQuotes():
 
         user = session["username"]
 
-        tickerWasDeleted = False
+        usersCurrentTickers = db.execute(
+            "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
+
+        # Create a dictionary of dictionaries from the list of dictionaries
+        usersCurrentTickers = {tickerDict["Ticker"]: {
+            "QuoteNumber": tickerDict["QuoteNumber"]} for tickerDict in usersCurrentTickers}
 
         if request.args.get("tickerToDelete"):
+            tickerToDelete = request.args.get("tickerToDelete")
 
-            tickerWasDeleted = True
+            deletedTickersQuoteNumber = usersCurrentTickers[tickerToDelete]["QuoteNumber"]
 
             db.execute("DELETE FROM Quotes WHERE User = :user AND Ticker = :tickerToDelete",
-                       user=user, tickerToDelete=request.args.get("tickerToDelete"))
+                       user=user, tickerToDelete=tickerToDelete)
 
-        usersCurrentTickers = db.execute(
-            "SELECT Ticker FROM Quotes WHERE User = :user", user=user)
+            usersCurrentTickers.pop(tickerToDelete)
 
-        # print("update quotes first: ", usersCurrentTickers)
+            # Renumber remaining quotes
+            for entry in usersCurrentTickers:
+                # If the quote's QuoteNumber is greater than the deleted quote's QuoteNumber, move it down one place
+                if usersCurrentTickers[entry]["QuoteNumber"] > deletedTickersQuoteNumber:
+                    usersCurrentTickers[entry]["QuoteNumber"] = usersCurrentTickers[entry]["QuoteNumber"] - 1
 
-        # make function which takes a list and returns a formatted string for api
-
-        multipleParametersForAPI = ""
-
-        newQuoteNumber = 1
-
-        for entry in usersCurrentTickers:
-
-            # Renumber quotes in case there was a deletion
-            if tickerWasDeleted:
                 db.execute("UPDATE Quotes SET QuoteNumber = :quoteNumber WHERE User = :user AND Ticker = :ticker",
-                           quoteNumber=newQuoteNumber, user=user, ticker=entry["Ticker"])
-                # entry["QuoteNumber"] = newQuoteNumber
-                newQuoteNumber = newQuoteNumber + 1
-            # Build string of tickers for API query
-            multipleParametersForAPI = multipleParametersForAPI + \
-                entry["Ticker"] + ","
+                           quoteNumber=usersCurrentTickers[entry]["QuoteNumber"], user=user, ticker=entry)
 
-        # Remove the trailing comma
-        multipleParametersForAPI = multipleParametersForAPI[:-1]
-
-        # Get the JSON results from calling the API with multiple parameters
-        lookupResults = lookupMultiple(multipleParametersForAPI)
-
-        # Notify user if there is an error getting prices and stop execution
-        if lookupResults == None:
-            return render_template("printQuotes.html", message="Error getting results.")
-
-        # print("update quotes last: ", usersCurrentTickers)
-
-        for result in lookupResults:
-
-            # Add price information to usersCurrentTickers
-            for userQuote in usersCurrentTickers:
-
-                if userQuote["Ticker"] == result["symbol"]:
-                    userQuote["Price"] = result["price"]
+        # Update usersCurrentTickers with current pricing information
+        usersCurrentTickers = prepareUsersCurrentHoldingsForDisplay(
+            usersCurrentTickers)
 
     return render_template("printQuotes.html", usersQuotes=usersCurrentTickers)
 
