@@ -264,12 +264,17 @@ def quote():
     usersCurrentTickers = {dictEntry["Ticker"]: {
         "QuoteNumber": dictEntry["QuoteNumber"]} for dictEntry in usersCurrentTickers}
 
-    if request.method == "GET":
-        # This will need to be fixed
-        usersCurrentHoldings = prepareUsersCurrentHoldingsForDisplay(
-            usersCurrentTickers)
+    print("beginning of /quote: ", usersCurrentTickers)
 
-        return render_template("printQuotes.html", usersQuotes=usersCurrentHoldings)
+    if request.method == "GET":
+        # If usersCurrentTickers is empty, don't return a usersQuotes
+        if usersCurrentTickers:
+            usersCurrentHoldings = prepareUsersCurrentHoldingsForDisplay(
+                usersCurrentTickers)
+
+            return render_template("printQuotes.html", usersQuotes=usersCurrentHoldings)
+        else:
+            return render_template("printQuotes.html")
 
     elif request.method == "POST":
 
@@ -390,20 +395,28 @@ def updateQuotes():
 
             usersCurrentTickers.pop(tickerToDelete)
 
-            # Renumber remaining quotes
-            for entry in usersCurrentTickers:
-                # If the quote's QuoteNumber is greater than the deleted quote's QuoteNumber, move it down one place
-                if usersCurrentTickers[entry]["QuoteNumber"] > deletedTickersQuoteNumber:
-                    usersCurrentTickers[entry]["QuoteNumber"] = usersCurrentTickers[entry]["QuoteNumber"] - 1
+            # If there are any remaining tickers in usersCurrentTickers
+            if usersCurrentTickers:
 
-                db.execute("UPDATE Quotes SET QuoteNumber = :quoteNumber WHERE User = :user AND Ticker = :ticker",
-                           quoteNumber=usersCurrentTickers[entry]["QuoteNumber"], user=user, ticker=entry)
+                # Renumber remaining quotes
+                for entry in usersCurrentTickers:
+                    # If the quote's QuoteNumber is greater than the deleted quote's QuoteNumber, move it down one place
+                    if usersCurrentTickers[entry]["QuoteNumber"] > deletedTickersQuoteNumber:
+                        usersCurrentTickers[entry]["QuoteNumber"] = usersCurrentTickers[entry]["QuoteNumber"] - 1
 
-        # Update usersCurrentTickers with current pricing information
-        usersCurrentTickers = prepareUsersCurrentHoldingsForDisplay(
-            usersCurrentTickers)
+                    db.execute("UPDATE Quotes SET QuoteNumber = :quoteNumber WHERE User = :user AND Ticker = :ticker",
+                               quoteNumber=usersCurrentTickers[entry]["QuoteNumber"], user=user, ticker=entry)
 
-    return render_template("printQuotes.html", usersQuotes=usersCurrentTickers)
+        # If there are any remaining tickers in usersCurrentTickers
+        if usersCurrentTickers:
+            # Update usersCurrentTickers with current pricing information
+            usersCurrentTickers = prepareUsersCurrentHoldingsForDisplay(
+                usersCurrentTickers)
+
+            return render_template("printQuotes.html", usersQuotes=usersCurrentTickers)
+
+        else:
+            return render_template("printQuotes.html")
 
 
 @app.route("/register", methods=["GET", "POST"])
