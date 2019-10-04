@@ -85,6 +85,10 @@ def buy():
     usersCurrentHoldings = db.execute(
         "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
 
+    # Transform list of dictionaries into a dictionary of dictionaries
+    usersCurrentTickers = {dictEntry["Ticker"]: {
+        "Shares": dictEntry["Shares"]} for dictEntry in usersCurrentTickers}
+
     if request.method == "GET":
 
         usersCurrentHoldings = prepareUsersCurrentHoldingsForDisplay(
@@ -108,13 +112,12 @@ def buy():
 
         numberOfSharesUserOwns = 0
 
-        for holding in usersCurrentHoldings:
-            if holding["Ticker"] == usersTickerSymbol:
-                numberOfSharesUserOwns = holding["Shares"]
+        if usersTickerSymbol in usersCurrentTickers:
+            numberOfSharesUserOwns = usersCurrentHoldings[usersTickerSymbol]["Shares"]
 
         numberOfSharesToBuy = int(request.form.get("number"))
 
-        # Return an error if the user enters zero or less shares to buy
+        # Return an error if the user enters zero or fewer shares to buy
         if numberOfSharesToBuy <= 0:
             return apology("share error", 403)
 
