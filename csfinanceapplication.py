@@ -8,7 +8,7 @@ from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from helpers import apology, login_required, lookup, usd, lookupMultiple, getAPIResultsWithMultipleTickers, prepareUsersCurrentHoldingsForDisplay
+from helpers import apology, login_required, lookup, usd, prepareUsersCurrentHoldingsForDisplay
 
 # Configure application
 app = Flask(__name__)
@@ -52,23 +52,17 @@ def index():
     usersCurrentHoldings = {dictEntry["Ticker"]: {
         "Shares": dictEntry["Shares"]} for dictEntry in usersCurrentHoldings}
 
-    lookupResults = getAPIResultsWithMultipleTickers(usersCurrentHoldings)
-
-    print("usersCurrentHoldings results!!!!: ", usersCurrentHoldings)
-    print("lookup results!!!!: ", lookupResults)
+    lookupResults = prepareUsersCurrentHoldingsForDisplay(usersCurrentHoldings)
 
     totalValueOfUsersStocks = 0
 
-    for result in lookupResults:
-        if result["symbol"] in usersCurrentHoldings:
-            thisTicker = result["symbol"]
-            thisPrice = result["price"]
-            thisValue = usersCurrentHoldings[thisTicker]["Shares"] * thisPrice
-            totalValueOfUsersStocks = totalValueOfUsersStocks + thisValue
-            thisValue = usd(thisValue)
-            thisPrice = usd(thisPrice)
-            usersCurrentHoldings[thisTicker].update(
-                {"Price": thisPrice, "TotalValue": thisValue})
+    for holding in lookupResults:
+        thisPrice = usersCurrentHoldings[holding]["Price"]
+        thisValue = usersCurrentHoldings[holding]["Shares"] * thisPrice
+        totalValueOfUsersStocks = totalValueOfUsersStocks + thisValue
+        thisPrice = usd(thisPrice)
+        thisValue = usd(thisValue)
+        usersCurrentHoldings[holding].update({"TotalValue": thisValue})
 
     currentCashBalance = db.execute("SELECT cash FROM users WHERE username = :username",
                                     username=thisUser)
@@ -403,7 +397,7 @@ def updateQuotes():
             except KeyError:
                 # Return an error if the tickerToDelete is not in usersCurrentTickers
                 return apology("Ticker to Delete Not Owned by User", 403)
-            
+
             db.execute("DELETE FROM Quotes WHERE User = :user AND Ticker = :tickerToDelete",
                        user=user, tickerToDelete=tickerToDelete)
 
