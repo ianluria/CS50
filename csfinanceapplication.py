@@ -388,11 +388,15 @@ def updateQuotes():
         usersCurrentTickers = {tickerDict["Ticker"]: {
             "QuoteNumber": tickerDict["QuoteNumber"]} for tickerDict in usersCurrentTickers}
 
-        if request.args.get("tickerToDelete"):
+       if request.args.get("tickerToDelete"):
             tickerToDelete = request.args.get("tickerToDelete")
 
-            deletedTickersQuoteNumber = usersCurrentTickers[tickerToDelete]["QuoteNumber"]
-
+            try:
+                deletedTickersQuoteNumber = usersCurrentTickers[tickerToDelete]["QuoteNumber"]
+            except KeyError:
+                # Return an error if the tickerToDelete is not in usersCurrentTickers
+                return apology("Ticker to Delete Not Owned by User", 403)
+            
             db.execute("DELETE FROM Quotes WHERE User = :user AND Ticker = :tickerToDelete",
                        user=user, tickerToDelete=tickerToDelete)
 
@@ -403,7 +407,7 @@ def updateQuotes():
 
                 # Renumber remaining quotes
                 for entry in usersCurrentTickers:
-                    # If the quote's QuoteNumber is greater than the deleted quote's QuoteNumber, move it down one place
+                    # If the entry's QuoteNumber is greater than the deleted quote's QuoteNumber, move it down one place
                     if usersCurrentTickers[entry]["QuoteNumber"] > deletedTickersQuoteNumber:
                         usersCurrentTickers[entry]["QuoteNumber"] = usersCurrentTickers[entry]["QuoteNumber"] - 1
 
