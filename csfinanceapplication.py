@@ -501,52 +501,52 @@ def sell():
         if sharesToSell <= 0:
             return apology("share error", 403)
 
-        for holding in usersCurrentHoldings:
+        if tickerToSell in usersCurrentHoldings:
+
             # User does own shares of the ticker to sell
-            if holding == tickerToSell:
 
-                numberOfSharesUserOwns = usersCurrentHoldings[holding]["Shares"]
+            numberOfSharesUserOwns = usersCurrentHoldings[tickerToSell]["Shares"]
 
-                # Create an error if the user tries to sell more shares than he/she owns
-                if numberOfSharesUserOwns < sharesToSell:
-                    return apology("Selling more shares than you own", 403)
+            # Create an error if the user tries to sell more shares than he/she owns
+            if numberOfSharesUserOwns < sharesToSell:
+                return apology("Selling more shares than you own", 403)
 
-                # Get the current pricing information
-                thisLookupResults = lookup(tickerToSell)
+            # Get the current pricing information
+            thisLookupResults = lookup(tickerToSell)
 
-                # Is this necessary?????
-                if not thisLookupResults:
-                    return apology("Error getting API results", 403)
+            # Is this necessary?????
+            if not thisLookupResults:
+                return apology("Error getting API results", 403)
 
-                thisSalePrice = thisLookupResults['price']
+            thisSalePrice = thisLookupResults['price']
 
-                proceeds = thisSalePrice * sharesToSell
+            proceeds = thisSalePrice * sharesToSell
 
-                thisUsersCash = db.execute("SELECT cash FROM users WHERE username = :username",
-                                           username=thisUser)
+            thisUsersCash = db.execute("SELECT cash FROM users WHERE username = :username",
+                                       username=thisUser)
 
-                # How much cash the user now has after the sale
-                thisUsersCash = round(thisUsersCash[0]["cash"] + proceeds, 2)
+            # How much cash the user now has after the sale
+            thisUsersCash = round(thisUsersCash[0]["cash"] + proceeds, 2)
 
-                db.execute("UPDATE users SET cash = :newCashBalance WHERE username = :username",
-                           username=thisUser, newCashBalance=thisUsersCash)
+            db.execute("UPDATE users SET cash = :newCashBalance WHERE username = :username",
+                       username=thisUser, newCashBalance=thisUsersCash)
 
-                # Delete the holding from Holdings if all the shares are being sold
-                if numberOfSharesUserOwns == sharesToSell:
-                    db.execute("DELETE FROM Holdings WHERE User = :user AND Ticker = :tickerToDelete",
-                               user=thisUser, tickerToDelete=tickerToSell)
-                # Else, update the number of shares the user owns
-                else:
-                    db.execute("UPDATE Holdings SET Shares = :shares WHERE User = :username AND Ticker = :tickerSold",
-                               username=thisUser, shares=numberOfSharesUserOwns-sharesToSell, tickerSold=tickerToSell)
+            # Delete the holding from Holdings if all the shares are being sold
+            if numberOfSharesUserOwns == sharesToSell:
+                db.execute("DELETE FROM Holdings WHERE User = :user AND Ticker = :tickerToDelete",
+                           user=thisUser, tickerToDelete=tickerToSell)
+            # Else, update the number of shares the user owns
+            else:
+                db.execute("UPDATE Holdings SET Shares = :shares WHERE User = :username AND Ticker = :tickerSold",
+                           username=thisUser, shares=numberOfSharesUserOwns-sharesToSell, tickerSold=tickerToSell)
 
-                # Add the sell trasaction to history
-                db.execute("INSERT INTO History (Ticker, Price, DateTime, Type, User, NumberOfShares) VALUES (:ticker, :price, :dateTime, :type, :user, :numberOfShares)",
-                           ticker=tickerToSell, price=thisSalePrice, dateTime=datetime.datetime.now().strftime("%d-%m-%Y %H:%M"), type="SELL", user=thisUser, numberOfShares=sharesToSell)
+            # Add the sell trasaction to history
+            db.execute("INSERT INTO History (Ticker, Price, DateTime, Type, User, NumberOfShares) VALUES (:ticker, :price, :dateTime, :type, :user, :numberOfShares)",
+                       ticker=tickerToSell, price=thisSalePrice, dateTime=datetime.datetime.now().strftime("%d-%m-%Y %H:%M"), type="SELL", user=thisUser, numberOfShares=sharesToSell)
 
-                returnString = f"{sharesToSell} shares of {tickerToSell} sold at {usd(thisSalePrice)} for a total of {usd(proceeds)}."
+            returnString = f"{sharesToSell} shares of {tickerToSell} sold at {usd(thisSalePrice)} for a total of {usd(proceeds)}."
 
-                return render_template("messageDisplay.html", message=returnString)
+            return render_template("messageDisplay.html", message=returnString)
 
         return apology(f"Could not find {tickerToSell} in your portfolio.", 403)
 
