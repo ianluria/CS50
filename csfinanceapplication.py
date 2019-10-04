@@ -392,7 +392,7 @@ def updateQuotes():
         usersCurrentTickers = {tickerDict["Ticker"]: {
             "QuoteNumber": tickerDict["QuoteNumber"]} for tickerDict in usersCurrentTickers}
 
-       if request.args.get("tickerToDelete"):
+        if request.args.get("tickerToDelete"):
             tickerToDelete = request.args.get("tickerToDelete")
 
             try:
