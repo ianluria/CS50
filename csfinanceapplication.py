@@ -471,6 +471,10 @@ def sell():
     usersCurrentHoldings = db.execute(
         "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
 
+    # Transform list of dictionaries into a dictionary of dictionaries
+    usersCurrentTickers = {dictEntry["Ticker"]: {
+        "Shares": dictEntry["Shares"]} for dictEntry in usersCurrentTickers}
+
     if request.method == "GET":
 
         usersCurrentHoldings = prepareUsersCurrentHoldingsForDisplay(
@@ -499,9 +503,9 @@ def sell():
 
         for holding in usersCurrentHoldings:
             # User does own shares of the ticker to sell
-            if holding["Ticker"] == tickerToSell:
+            if holding == tickerToSell:
 
-                numberOfSharesUserOwns = holding["Shares"]
+                numberOfSharesUserOwns = usersCurrentHoldings[holding]["Shares"]
 
                 # Create an error if the user tries to sell more shares than he/she owns
                 if numberOfSharesUserOwns < sharesToSell:
@@ -510,6 +514,7 @@ def sell():
                 # Get the current pricing information
                 thisLookupResults = lookup(tickerToSell)
 
+                # Is this necessary?????
                 if not thisLookupResults:
                     return apology("Error getting API results", 403)
 
@@ -543,7 +548,7 @@ def sell():
 
                 return render_template("messageDisplay.html", message=returnString)
 
-    return apology(f"Could not find {tickerToSell} in your portfolio.", 403)
+        return apology(f"Could not find {tickerToSell} in your portfolio.", 403)
 
 
 def errorhandler(e):
