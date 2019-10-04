@@ -48,20 +48,24 @@ def index():
     usersCurrentHoldings = db.execute(
         "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
 
+    # Transform list of dictionaries into a dictionary of dictionaries
+    usersCurrentTickers = {dictEntry["Ticker"]: {
+        "Shares": dictEntry["Shares"]} for dictEntry in usersCurrentTickers}
+
     lookupResults = getAPIResultsWithMultipleTickers(usersCurrentHoldings)
 
     totalValueOfUsersStocks = 0
 
     for result in lookupResults:
-        for holding in usersCurrentHoldings:
-            if holding["Ticker"] == result["symbol"]:
-                thisPrice = result["price"]
-                thisValue = holding["Shares"] * thisPrice
-                totalValueOfUsersStocks = totalValueOfUsersStocks + thisValue
-                thisValue = usd(thisValue)
-                thisPrice = usd(thisPrice)
-                holding.update(
-                    {"Price": thisPrice, "TotalValue": thisValue})
+        if result["symbol"] in usersCurrentHoldings:
+            thisTicker = result["symbol"]
+            thisPrice = result["price"]
+            thisValue = usersCurrentHoldings[thisTicker]["Shares"] * thisPrice
+            totalValueOfUsersStocks = totalValueOfUsersStocks + thisValue
+            thisValue = usd(thisValue)
+            thisPrice = usd(thisPrice)
+            usersCurrentHoldings[thisTicker].update(
+                {"Price": thisPrice, "TotalValue": thisValue})
 
     currentCashBalance = db.execute("SELECT cash FROM users WHERE username = :username",
                                     username=thisUser)
