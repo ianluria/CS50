@@ -57,7 +57,8 @@ def index():
     totalValueOfUsersStocks = 0
 
     for holding in lookupResults:
-        thisPrice = usersCurrentHoldings[holding]["Price"]
+        # Remove $ from price string returned in lookupResults
+        thisPrice = float(usersCurrentHoldings[holding]["Price"][1:])
         thisValue = usersCurrentHoldings[holding]["Shares"] * thisPrice
         totalValueOfUsersStocks = totalValueOfUsersStocks + thisValue
         thisPrice = usd(thisPrice)
