@@ -54,6 +54,9 @@ def index():
 
     lookupResults = getAPIResultsWithMultipleTickers(usersCurrentHoldings)
 
+    print("usersCurrentHoldings results!!!!: ", usersCurrentHoldings)
+    print("lookup results!!!!: ", lookupResults)
+
     totalValueOfUsersStocks = 0
 
     for result in lookupResults:
