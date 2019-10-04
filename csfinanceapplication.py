@@ -93,8 +93,8 @@ def buy():
         "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
 
     # Transform list of dictionaries into a dictionary of dictionaries
-    usersCurrentTickers = {dictEntry["Ticker"]: {
-        "Shares": dictEntry["Shares"]} for dictEntry in usersCurrentTickers}
+    usersCurrentHoldings = {dictEntry["Ticker"]: {
+        "Shares": dictEntry["Shares"]} for dictEntry in usersCurrentHoldings}
 
     if request.method == "GET":
 
@@ -486,8 +486,8 @@ def sell():
         "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
 
     # Transform list of dictionaries into a dictionary of dictionaries
-    usersCurrentTickers = {dictEntry["Ticker"]: {
-        "Shares": dictEntry["Shares"]} for dictEntry in usersCurrentTickers}
+    usersCurrentHoldings = {dictEntry["Ticker"]: {
+        "Shares": dictEntry["Shares"]} for dictEntry in usersCurrentHoldings}
 
     if request.method == "GET":
 
