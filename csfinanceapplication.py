@@ -54,6 +54,11 @@ def index():
 
     lookupResults = prepareUsersCurrentHoldingsForDisplay(usersCurrentHoldings)
 
+    if "error" in lookupResults:
+        return apology(lookupResults["error"],403)
+    elif "holdings" in lookupResults:
+        lookupResults = lookupResults["holdings"]
+
     totalValueOfUsersStocks = 0
 
     for holding in lookupResults:
@@ -268,8 +273,6 @@ def quote():
     # Transform list of dictionaries into a dictionary of dictionaries
     usersCurrentTickers = {dictEntry["Ticker"]: {
         "QuoteNumber": dictEntry["QuoteNumber"]} for dictEntry in usersCurrentTickers}
-
-    print("beginning of /quote: ", usersCurrentTickers)
 
     if request.method == "GET":
         # If usersCurrentTickers is empty, don't return a usersQuotes
