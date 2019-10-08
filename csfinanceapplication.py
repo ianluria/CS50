@@ -345,12 +345,18 @@ def quote():
         usersCurrentTickers = prepareUsersCurrentHoldingsForDisplay(
             usersCurrentTickers)
 
+        if "error" in usersCurrentTickers:
+            errorFound =True
+            errorMessage = usersCurrentTickers["error"]
+        elif "holdings" in usersCurrentTickers:
+            usersCurrentTickers = usersCurrentTickers["holdings"]
+
         # Test whether the usersTickerSymbol is valid by discovering whether it is included in lookupResults
 
         # Only check for presence of usersTickerSymbol if there was not a previous error (i.e. no symbol was entered)
         if not errorFound:
 
-            usersTickerPresentInAPIResults = "Price" in usersCurrentTickers[usersTickerSymbol]
+            usersTickerPresentInAPIResults = usersTickerSymbol in usersCurrentTickers
 
             # Return an error message if the user did enter a ticker symbol, but it was invalid (not present in API results)
             if not usersTickerPresentInAPIResults:
