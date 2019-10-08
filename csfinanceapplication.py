@@ -48,38 +48,45 @@ def index():
     usersCurrentHoldings = db.execute(
         "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
 
-    # Transform list of dictionaries into a dictionary of dictionaries
-    usersCurrentHoldings = {dictEntry["Ticker"]: {
-        "Shares": dictEntry["Shares"]} for dictEntry in usersCurrentHoldings}
-
-    lookupResults = prepareUsersCurrentHoldingsForDisplay(usersCurrentHoldings)
-
-    if "error" in lookupResults:
-        return apology(lookupResults["error"],403)
-    elif "holdings" in lookupResults:
-        lookupResults = lookupResults["holdings"]
-
-    totalValueOfUsersStocks = 0
-
-    for holding in lookupResults:
-        # Remove $ from price string returned in lookupResults
-        thisPrice = float(usersCurrentHoldings[holding]["Price"][1:])
-        thisValue = usersCurrentHoldings[holding]["Shares"] * thisPrice
-        totalValueOfUsersStocks = totalValueOfUsersStocks + thisValue
-        thisPrice = usd(thisPrice)
-        thisValue = usd(thisValue)
-        usersCurrentHoldings[holding].update({"TotalValue": thisValue})
-
     currentCashBalance = db.execute("SELECT cash FROM users WHERE username = :username",
                                     username=thisUser)
 
     currentCashBalance = currentCashBalance[0]["cash"]
 
-    usersPortfolioValue = usd(currentCashBalance + totalValueOfUsersStocks)
+    usersPortfolioValue = 0
 
-    currentCashBalance = usd(currentCashBalance)
+    print("usersCurrentHoldings in index: ", usersCurrentHoldings)
 
-    return render_template("index.html", usersCurrentHoldings=usersCurrentHoldings, currentCashBalance=currentCashBalance, usersPortfolioValue=usersPortfolioValue, thisUser=thisUser)
+    if usersCurrentHoldings:
+
+        print("yes inside usersCurrentHoldings!")
+
+        # Transform list of dictionaries into a dictionary of dictionaries
+        usersCurrentHoldings = {dictEntry["Ticker"]: {
+            "Shares": dictEntry["Shares"]} for dictEntry in usersCurrentHoldings}
+
+        lookupResults = prepareUsersCurrentHoldingsForDisplay(
+            usersCurrentHoldings)
+
+        if "error" in lookupResults:
+            return apology(lookupResults["error"], 403)
+        elif "holdings" in lookupResults:
+            lookupResults = lookupResults["holdings"]
+
+        totalValueOfUsersStocks = 0
+
+        for holding in lookupResults:
+            # Remove $ from price string returned in lookupResults
+            thisPrice = float(usersCurrentHoldings[holding]["Price"][1:])
+            thisValue = usersCurrentHoldings[holding]["Shares"] * thisPrice
+            totalValueOfUsersStocks = totalValueOfUsersStocks + thisValue
+
+            thisValue = usd(thisValue)
+            usersCurrentHoldings[holding].update({"TotalValue": thisValue})
+
+        usersPortfolioValue = currentCashBalance + totalValueOfUsersStocks
+
+    return render_template("index.html", usersCurrentHoldings=usersCurrentHoldings, currentCashBalance=usd(currentCashBalance), usersPortfolioValue=usd(usersPortfolioValue), thisUser=thisUser)
 
 
 @app.route("/buy", methods=["GET", "POST"])
