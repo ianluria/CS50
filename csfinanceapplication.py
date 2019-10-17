@@ -268,94 +268,86 @@ def quote():
     user = session["username"]
 
     # make a copy of all the existing records for the user from the database
-    usersCurrentTickers = db.execute(
+    usersCurrentTickers = {}
+
+    usersCurrentTickers["holdings"] = db.execute(
         "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
 
-    # Transform list of dictionaries into a dictionary of dictionaries
-    usersCurrentTickers = {dictEntry["Ticker"]: {
-        "QuoteNumber": dictEntry["QuoteNumber"]} for dictEntry in usersCurrentTickers}
+    if usersCurrentTickers["holdings"]:
+        # Transform list of dictionaries into a dictionary of dictionaries
+        usersCurrentTickers["holdings"] = {dictEntry["Ticker"]: {
+            "QuoteNumber": dictEntry["QuoteNumber"]} for dictEntry in usersCurrentTickers}
 
     if request.method == "GET":
         # If usersCurrentTickers is empty, don't return a usersQuotes
-        if usersCurrentTickers:
-            usersCurrentHoldings = prepareUsersCurrentHoldingsForDisplay(
-                usersCurrentTickers)
+        if usersCurrentTickers["holdings"]:
+            usersCurrentTickers["holdings"] = prepareUsersCurrentHoldingsForDisplay(
+                usersCurrentTickers["holdings"])
 
-            return render_template("printQuotes.html", usersQuotes=usersCurrentHoldings)
-        else:
-            return render_template("printQuotes.html")
+        return render_template("printQuotes.html", usersQuotes=usersCurrentTickers)
 
     elif request.method == "POST":
 
-        errorMessage = ""
-        errorFound = False
         thisNewQuoteNumber = 0
         usersQuoteDictEntry = {}
         multipleParametersForAPI = ""
-        usersTickerSymbol = ""
 
-        usersListLength = len(usersCurrentTickers)
+        usersListLength = len(usersCurrentTickers["holdings"])
 
         # if the usersListLength is empty and the user inputs nothing, return a custom error message
 
         # when list is full, when user inputs duplicate symbol and then submits a blank quote, the last quote is repeated
 
         # Prepare error message to user if incomplete form
-        if not request.form.get("symbol"):
-            errorMessage = "Please fill out ticker symbol."
-            errorFound = True
-
-        # Get the ticker symbol input that the user entered if the input was not blank
-        if not errorFound:
+        if request.form.get("symbol"):
             usersTickerSymbol = request.form.get("symbol").upper()
+        else:
+            usersCurrentTickers["error"] = "Please fill out ticker symbol."
 
-        # Create error message if the length is too long
-        if len(usersTickerSymbol) > 5:
-            errorMessage = "Ticker symbol is too long."
-            errorFound = True
+        if not usersCurrentTickers["error"]:
+            # Create error message if the length is too long
+            if len(usersTickerSymbol) > 5:
+                usersCurrentTickers["error"] = "Ticker symbol is too long."
 
-        # Test whether usersTickerSymbol is already being tracked by the user
-        if usersListLength > 0:
-
-            # Do not try to find ticker if there is already an error
-            if not errorFound:
-                if usersTickerSymbol in usersCurrentTickers:
+            # Test whether usersTickerSymbol is already being tracked by the user
+            if usersCurrentTickers["holdings"] and not usersCurrentTickers["error"]:
+                if usersTickerSymbol in usersCurrentTickers["holdings"]:
                     # Create error because the ticker is already being tracked
-                    errorFound = True
+                    usersCurrentTickers["error"] = f"{usersTickerSymbol} is already being tracked."
 
-        # usersTickerSymbol is not already in list; it's safe to add it to usersCurrentTickers
-        if not errorFound:
+            # usersTickerSymbol is not already in list; it's safe to add it to usersCurrentTickers
+            if not usersCurrentTickers["error"]:
 
-            # Assign a new QuoteNumber for usersTickerSymbol
-            thisNewQuoteNumber = usersListLength + 1
+                # Assign a new QuoteNumber for usersTickerSymbol
+                thisNewQuoteNumber = usersListLength + 1
 
-            # Add usersTickerSymbol to dictionary
-            usersCurrentTickers[usersTickerSymbol] = {
-                "QuoteNumber": thisNewQuoteNumber}
+                # Add usersTickerSymbol to holdings
+                usersCurrentTickers["holdings"][usersTickerSymbol] = {
+                    "QuoteNumber": thisNewQuoteNumber}
 
-            # Update the length of usersCurrentTickers
-            usersListLength = len(usersCurrentTickers)
+                # Update the length of usersCurrentTickers
+                usersListLength = len(usersCurrentTickers)
 
         usersCurrentTickers = prepareUsersCurrentHoldingsForDisplay(
             usersCurrentTickers)
 
-        print("prepared userscurrenttickers in quote: ", usersCurrentTickers)
-
         if "error" in usersCurrentTickers:
             errorFound = True
             errorMessage = usersCurrentTickers["error"]
-        elif "holdings" in usersCurrentTickers:
-            usersCurrentTickers = usersCurrentTickers["holdings"]
+        # elif "holdings" in usersCurrentTickers:
+        #     usersCurrentTickers = usersCurrentTickers["holdings"]
+
+        print("here1: ", usersCurrentTickers)
 
         # Only check for presence of usersTickerSymbol if there was not a previous error (i.e. no symbol was entered)
         if not errorFound:
 
             # Return an error message if the user did enter a ticker symbol, but it was invalid (not present in API results)
-            if not "Price" in usersCurrentTickers[usersTickerSymbol]
+            if not "Price" in usersCurrentTickers["holdings"][usersTickerSymbol]:
 
-            errorMessage = f"Unable to find ticker symbol {usersTickerSymbol}."
-            # Delete usersTickerSymbol from usersCurrentTickers
-            usersCurrentTickers.pop(usersTickerSymbol)
+                errorMessage = f"Unable to find ticker symbol {usersTickerSymbol}."
+                # Delete usersTickerSymbol from usersCurrentTickers
+                usersCurrentTickers.pop(usersTickerSymbol)
 
             # Else, usersTickerSymbol is valid and database needs to be updated with the new ticker symbol
             else:
@@ -366,23 +358,25 @@ def quote():
 
                     listLengthIsSix = True
 
-                    usersCurrentTickers = {
-                        ticker: usersCurrentTickers[ticker] for ticker in usersCurrentTickers if usersCurrentTickers[ticker]["QuoteNumber"]-1 > 0}
+                    usersCurrentTickers["holdings"] = {
+                        ticker: usersCurrentTickers["holdings"][ticker] for ticker in usersCurrentTickers["holdings"] if usersCurrentTickers["holdings"][ticker]["QuoteNumber"]-1 > 0}
 
                     # Delete all of the user's existing database records so revised entries can be added
                     db.execute(
                         "DELETE FROM Quotes WHERE User = :user", user=user)
 
                 # Test each entry to see if it needs to be added to database
-                for entry in usersCurrentTickers:
+                for entry in usersCurrentTickers["holdings"]:
 
                     # If the length was six, each ticker needs to be added with its new QuoteNumber
                     # The usersTickerSymbol will be added to the database regardless of the size of usersCurrentTickers (it has passed API test)
                     if listLengthIsSix or entry == usersTickerSymbol:
                         db.execute("INSERT INTO Quotes (QuoteNumber, User, Ticker) VALUES (:quoteNumber, :user, :ticker)",
-                                   quoteNumber=usersCurrentTickers[entry]["QuoteNumber"], user=user, ticker=entry)
+                                   quoteNumber=usersCurrentTickers["holdings"][entry]["QuoteNumber"], user=user, ticker=entry)
 
-        return render_template("printQuotes.html", usersQuotes=usersCurrentTickers, errorMessage=errorMessage)
+        print("usersQuotes**: ", usersCurrentTickers)
+
+        return render_template("printQuotes.html", usersQuotes=usersCurrentTickers)
 
 
 @app.route("/updateQuotes", methods=["GET"])
