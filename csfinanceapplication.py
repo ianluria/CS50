@@ -55,11 +55,7 @@ def index():
 
     usersPortfolioValue = 0
 
-    print("usersCurrentHoldings in index: ", usersCurrentHoldings)
-
     if usersCurrentHoldings:
-
-        print("yes inside usersCurrentHoldings!")
 
         # Transform list of dictionaries into a dictionary of dictionaries
         usersCurrentHoldings = {dictEntry["Ticker"]: {
@@ -237,8 +233,6 @@ def login():
         rows = db.execute("SELECT * FROM users WHERE username = :username",
                           username=request.form.get("username"))
 
-        print("rows", rows)
-
         # Ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
             return apology("invalid username and/or password", 403)
@@ -345,24 +339,24 @@ def quote():
         usersCurrentTickers = prepareUsersCurrentHoldingsForDisplay(
             usersCurrentTickers)
 
+        print("prepared userscurrenttickers in quote: ", usersCurrentTickers)
+
         if "error" in usersCurrentTickers:
-            errorFound =True
+            errorFound = True
             errorMessage = usersCurrentTickers["error"]
         elif "holdings" in usersCurrentTickers:
             usersCurrentTickers = usersCurrentTickers["holdings"]
 
-        # Test whether the usersTickerSymbol is valid by discovering whether it is included in lookupResults
-
         # Only check for presence of usersTickerSymbol if there was not a previous error (i.e. no symbol was entered)
         if not errorFound:
 
-            usersTickerPresentInAPIResults = usersTickerSymbol in usersCurrentTickers
-
             # Return an error message if the user did enter a ticker symbol, but it was invalid (not present in API results)
-            if not usersTickerPresentInAPIResults:
-                errorMessage = f"Unable to find ticker symbol {usersTickerSymbol}."
-                # Delete the usersquote from usersCurrentTickers
-                usersCurrentTickers.pop(usersTickerSymbol)
+            if not "Price" in usersCurrentTickers[usersTickerSymbol]
+
+            errorMessage = f"Unable to find ticker symbol {usersTickerSymbol}."
+            # Delete usersTickerSymbol from usersCurrentTickers
+            usersCurrentTickers.pop(usersTickerSymbol)
+
             # Else, usersTickerSymbol is valid and database needs to be updated with the new ticker symbol
             else:
                 listLengthIsSix = False
