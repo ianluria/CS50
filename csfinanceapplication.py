@@ -287,13 +287,6 @@ def quote():
         return render_template("printQuotes.html", usersQuotes=usersCurrentTickers)
 
     elif request.method == "POST":
-
-        thisNewQuoteNumber = 0
-        usersQuoteDictEntry = {}
-        multipleParametersForAPI = ""
-
-        usersListLength = len(usersCurrentTickers["holdings"])
-
         # if the usersListLength is empty and the user inputs nothing, return a custom error message
 
         # when list is full, when user inputs duplicate symbol and then submits a blank quote, the last quote is repeated
@@ -319,42 +312,34 @@ def quote():
             if not usersCurrentTickers["error"]:
 
                 # Assign a new QuoteNumber for usersTickerSymbol
-                thisNewQuoteNumber = usersListLength + 1
+                thisNewQuoteNumber = len(usersCurrentTickers["holdings"]) + 1
 
                 # Add usersTickerSymbol to holdings
                 usersCurrentTickers["holdings"][usersTickerSymbol] = {
                     "QuoteNumber": thisNewQuoteNumber}
 
-                # Update the length of usersCurrentTickers
-                usersListLength = len(usersCurrentTickers)
-
+        # Add current per share price information from API
         usersCurrentTickers = prepareUsersCurrentHoldingsForDisplay(
             usersCurrentTickers)
 
-        if "error" in usersCurrentTickers:
-            errorFound = True
-            errorMessage = usersCurrentTickers["error"]
-        # elif "holdings" in usersCurrentTickers:
-        #     usersCurrentTickers = usersCurrentTickers["holdings"]
-
         print("here1: ", usersCurrentTickers)
 
-        # Only check for presence of usersTickerSymbol if there was not a previous error (i.e. no symbol was entered)
-        if not errorFound:
+        # Only check for pricing presence of usersTickerSymbol if there was not a previous error (i.e. no symbol was entered)
+        if not usersCurrentTickers["error"]:
 
             # Return an error message if the user did enter a ticker symbol, but it was invalid (not present in API results)
             if not "Price" in usersCurrentTickers["holdings"][usersTickerSymbol]:
 
-                errorMessage = f"Unable to find ticker symbol {usersTickerSymbol}."
+                usersCurrentTickers["error"] = f"Unable to find ticker symbol {usersTickerSymbol}."
                 # Delete usersTickerSymbol from usersCurrentTickers
-                usersCurrentTickers.pop(usersTickerSymbol)
+                usersCurrentTickers["holdings"].pop(usersTickerSymbol)
 
             # Else, usersTickerSymbol is valid and database needs to be updated with the new ticker symbol
             else:
                 listLengthIsSix = False
 
                 # If there are more than five stocks being tracked, move each QuoteNumber down one (6 becomes 5, 1 becomes 0)
-                if usersListLength > 5:
+                if len(usersCurrentTickers["holdings"]) > 5:
 
                     listLengthIsSix = True
 
@@ -365,7 +350,7 @@ def quote():
                     db.execute(
                         "DELETE FROM Quotes WHERE User = :user", user=user)
 
-                # Test each entry to see if it needs to be added to database
+                # Test each entry to see if it needs to be added to the database
                 for entry in usersCurrentTickers["holdings"]:
 
                     # If the length was six, each ticker needs to be added with its new QuoteNumber
