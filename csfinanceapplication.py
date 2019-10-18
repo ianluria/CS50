@@ -276,7 +276,7 @@ def quote():
     if usersCurrentTickers["holdings"]:
         # Transform list of dictionaries into a dictionary of dictionaries
         usersCurrentTickers["holdings"] = {dictEntry["Ticker"]: {
-            "QuoteNumber": dictEntry["QuoteNumber"]} for dictEntry in usersCurrentTickers}
+            "QuoteNumber": dictEntry["QuoteNumber"]} for dictEntry in usersCurrentTickers["holdings"]}
 
     if request.method == "GET":
         # If usersCurrentTickers is empty, don't return a usersQuotes
@@ -297,19 +297,19 @@ def quote():
         else:
             usersCurrentTickers["error"] = "Please fill out ticker symbol."
 
-        if not usersCurrentTickers["error"]:
+        if not "error" in usersCurrentTickers:
             # Create error message if the length is too long
             if len(usersTickerSymbol) > 5:
                 usersCurrentTickers["error"] = "Ticker symbol is too long."
 
             # Test whether usersTickerSymbol is already being tracked by the user
-            if usersCurrentTickers["holdings"] and not usersCurrentTickers["error"]:
+            if usersCurrentTickers["holdings"] and not "error" in usersCurrentTickers:
                 if usersTickerSymbol in usersCurrentTickers["holdings"]:
                     # Create error because the ticker is already being tracked
                     usersCurrentTickers["error"] = f"{usersTickerSymbol} is already being tracked."
 
             # usersTickerSymbol is not already in list; it's safe to add it to usersCurrentTickers
-            if not usersCurrentTickers["error"]:
+            if not "error" in usersCurrentTickers:
 
                 # Assign a new QuoteNumber for usersTickerSymbol
                 thisNewQuoteNumber = len(usersCurrentTickers["holdings"]) + 1
@@ -325,7 +325,7 @@ def quote():
         print("here1: ", usersCurrentTickers)
 
         # Only check for pricing presence of usersTickerSymbol if there was not a previous error (i.e. no symbol was entered)
-        if not usersCurrentTickers["error"]:
+        if not "error" in usersCurrentTickers:
 
             # Return an error message if the user did enter a ticker symbol, but it was invalid (not present in API results)
             if not "Price" in usersCurrentTickers["holdings"][usersTickerSymbol]:
