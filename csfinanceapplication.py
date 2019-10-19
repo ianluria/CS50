@@ -273,10 +273,9 @@ def quote():
     usersCurrentTickers["holdings"] = db.execute(
         "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
 
-    if usersCurrentTickers["holdings"]:
-        # Transform list of dictionaries into a dictionary of dictionaries
-        usersCurrentTickers["holdings"] = {dictEntry["Ticker"]: {
-            "QuoteNumber": dictEntry["QuoteNumber"]} for dictEntry in usersCurrentTickers["holdings"]}
+    # Transform list of dictionaries into a dictionary of dictionaries
+    usersCurrentTickers["holdings"] = {dictEntry["Ticker"]: {
+        "QuoteNumber": dictEntry["QuoteNumber"]} for dictEntry in usersCurrentTickers["holdings"]}
 
     if request.method == "GET":
         # If usersCurrentTickers is empty, don't return a usersQuotes
@@ -313,6 +312,8 @@ def quote():
 
                 # Assign a new QuoteNumber for usersTickerSymbol
                 thisNewQuoteNumber = len(usersCurrentTickers["holdings"]) + 1
+
+                print("here111:", usersCurrentTickers)
 
                 # Add usersTickerSymbol to holdings
                 usersCurrentTickers["holdings"][usersTickerSymbol] = {
