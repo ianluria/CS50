@@ -84,66 +84,29 @@ def lookupMultiple(multipleTickerString):
     except (KeyError, TypeError, ValueError):
         return None
 
-# Creates a string of ticker symbols to get API information for each valid symbol
-
-
-def getAPIResultsWithMultipleTickers(usersCurrentHoldings):
-
-    returnDict = {}
-
-    parameterForAPI = ",".join(usersCurrentHoldings.keys())
-
-    # Get the JSON results from calling the API with multiple parameters
-    lookupResults = lookupMultiple(parameterForAPI)
-
-    # Error getting results
-    if lookupResults == None:
-        returnDict["error"] = "Error getting API results."
-        return returnDict
-
-    # # Empty list
-    # if not lookupResults:
-    #     returnDict["error"]="Invalid ticker symbol."
-    #     return returnDict
-
-    returnDict["results"] = lookupResults
-    return returnDict
-
 # Takes a dictionary of dictionaries and returns it with current price information included for each ticker symbol
 
 
 def prepareUsersCurrentHoldingsForDisplay(usersCurrentHoldings):
-
-    # Return empty dict if empty dict is parameter
-    if not usersCurrentHoldings:
-        return usersCurrentHoldings
 
     # Not a dict
     if not isinstance(usersCurrentHoldings, dict):
         usersCurrentHoldings["error"] = "usersCurrentHoldings not a dictionary."
         return usersCurrentHoldings
 
-    
+    parameterForAPI = ",".join(usersCurrentHoldings["holdings"].keys())
 
-    # Get current pricing information for each stock held by user
-    lookupResults = getAPIResultsWithMultipleTickers(
-        usersCurrentHoldings["holdings"])
+    # Get the JSON results from calling the API with multiple parameters
+    lookupResults = lookupMultiple(parameterForAPI)
 
-    # If empty list in "results", create error
-    if not lookupResults["results"]:
-        lookupResults["error"] = "Unable to find ticker symbol."
-        lookupResults.pop("results")
+    # Error getting results
+    if lookupResults == None:
+        usersCurrentHoldings["error"] = "Error getting API results."
+        return usersCurrentHoldings
 
-    if "error" in lookupResults:
-        return lookupResults
+    # Add the current per share price for each holding in usersCurrentHoldings. No pricing information for a ticker means it is invalid.
+    for result in lookupResults:
 
-    if "results" in lookupResults:
-        # Add the current per share price to usersCurrentHoldings if ticker is in both lookupResults
-        # and usersCurrentHoldings. No pricing information for a ticker means it is invalid.
-        for result in lookupResults["results"]:
+        usersCurrentHoldings[result]["Price"] = usd(result["price"])
 
-            usersCurrentHoldings[result["symbol"]
-                                 ]["Price"] = usd(result["price"])
-
-        returnDict["holdings"] = usersCurrentHoldings
-        return returnDict
+    return usersCurrentHoldings
