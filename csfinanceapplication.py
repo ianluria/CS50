@@ -45,7 +45,9 @@ def index():
 
     thisUser = session["username"]
 
-    usersCurrentHoldings = db.execute(
+    usersCurrentHoldings = {}
+
+    usersCurrentHoldings["holdings"] = db.execute(
         "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
 
     currentCashBalance = db.execute("SELECT cash FROM users WHERE username = :username",
@@ -55,30 +57,29 @@ def index():
 
     usersPortfolioValue = 0
 
-    if usersCurrentHoldings:
+    if usersCurrentHoldings["holdings"]:
 
         # Transform list of dictionaries into a dictionary of dictionaries
-        usersCurrentHoldings = {dictEntry["Ticker"]: {
-            "Shares": dictEntry["Shares"]} for dictEntry in usersCurrentHoldings}
+        usersCurrentHoldings["holdings"] = {dictEntry["Ticker"]: {
+            "Shares": dictEntry["Shares"]} for dictEntry in usersCurrentHoldings["holdings"]}
 
-        lookupResults = prepareUsersCurrentHoldingsForDisplay(
+        usersCurrentHoldings = prepareUsersCurrentHoldingsForDisplay(
             usersCurrentHoldings)
 
-        if "error" in lookupResults:
+        if "error" in usersCurrentHoldings:
             return apology(lookupResults["error"], 403)
-        elif "holdings" in lookupResults:
-            lookupResults = lookupResults["holdings"]
 
         totalValueOfUsersStocks = 0
 
-        for holding in lookupResults:
+        for holding in usersCurrentHoldings["holdings"]:
             # Remove $ from price string returned in lookupResults
-            thisPrice = float(usersCurrentHoldings[holding]["Price"][1:])
-            thisValue = usersCurrentHoldings[holding]["Shares"] * thisPrice
+            thisPrice = float(
+                usersCurrentHoldings["holdings"][holding]["Price"][1:])
+            thisValue = usersCurrentHoldings["holdings"][holding]["Shares"] * thisPrice
             totalValueOfUsersStocks = totalValueOfUsersStocks + thisValue
 
             thisValue = usd(thisValue)
-            usersCurrentHoldings[holding].update({"TotalValue": thisValue})
+            usersCurrentHoldings["holdings"][holding]["Value"] = thisValue
 
         usersPortfolioValue = currentCashBalance + totalValueOfUsersStocks
 
@@ -124,7 +125,7 @@ def buy():
 
         numberOfSharesUserOwns = 0
 
-        if usersTickerSymbol in usersCurrentTickers["holdings"]:
+        if usersTickerSymbol in usersCurrentHoldings["holdings"]:
             numberOfSharesUserOwns = usersCurrentHoldings["holdings"][usersTickerSymbol]["Shares"]
 
         numberOfSharesToBuy = int(request.form.get("number"))
