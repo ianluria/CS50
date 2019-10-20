@@ -92,12 +92,14 @@ def buy():
 
     thisUser = session["username"]
 
-    usersCurrentHoldings = db.execute(
+    usersCurrentHoldings = {}
+
+    usersCurrentHoldings["holdings"] = db.execute(
         "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
 
     # Transform list of dictionaries into a dictionary of dictionaries
-    usersCurrentHoldings = {dictEntry["Ticker"]: {
-        "Shares": dictEntry["Shares"]} for dictEntry in usersCurrentHoldings}
+    usersCurrentHoldings["holdings"] = {dictEntry["Ticker"]: {
+        "Shares": dictEntry["Shares"]} for dictEntry in usersCurrentHoldings["holdings"]}
 
     if request.method == "GET":
 
@@ -118,7 +120,7 @@ def buy():
         usersTickerSymbol = request.form.get("symbol").upper()
 
         if len(usersTickerSymbol) > 5:
-            return apology("length", 403)
+            return apology("Ticker symbol is too long.", 403)
 
         numberOfSharesUserOwns = 0
 
@@ -345,7 +347,8 @@ def quote():
                     listLengthIsSix = True
 
                     usersCurrentTickers["holdings"] = {
-                        ticker: usersCurrentTickers["holdings"][ticker] for ticker in usersCurrentTickers["holdings"] if usersCurrentTickers["holdings"][ticker]["QuoteNumber"]-1 > 0}
+                        ticker: {"QuoteNumber": usersCurrentTickers["holdings"][ticker]["QuoteNumber"] - 1, "Price": usersCurrentTickers["holdings"][ticker]["Price"]}
+                            for ticker in usersCurrentTickers["holdings"] if usersCurrentTickers["holdings"][ticker]["QuoteNumber"]-1 > 0}
 
                     # Delete all of the user's existing database records so revised entries can be added
                     db.execute(
