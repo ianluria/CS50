@@ -283,8 +283,8 @@ def quote():
     if request.method == "GET":
         # If usersCurrentTickers is empty, don't return a usersQuotes
         if usersCurrentTickers["holdings"]:
-            usersCurrentTickers["holdings"] = prepareUsersCurrentHoldingsForDisplay(
-                usersCurrentTickers["holdings"])
+            usersCurrentTickers = prepareUsersCurrentHoldingsForDisplay(
+                usersCurrentTickers)
 
         return render_template("printQuotes.html", usersQuotes=usersCurrentTickers)
 
