@@ -124,14 +124,14 @@ def buy():
 
         numberOfSharesUserOwns = 0
 
-        if usersTickerSymbol in usersCurrentTickers:
-            numberOfSharesUserOwns = usersCurrentHoldings[usersTickerSymbol]["Shares"]
+        if usersTickerSymbol in usersCurrentTickers["holdings"]:
+            numberOfSharesUserOwns = usersCurrentHoldings["holdings"][usersTickerSymbol]["Shares"]
 
         numberOfSharesToBuy = int(request.form.get("number"))
 
         # Return an error if the user enters zero or fewer shares to buy
         if numberOfSharesToBuy <= 0:
-            return apology("share error", 403)
+            return apology("Must purchase at least 1 share.", 403)
 
         thisUsersCash = db.execute("SELECT cash FROM users WHERE username = :username",
                                    username=thisUser)
@@ -148,7 +148,7 @@ def buy():
         thisTransactionsTotal = stockPrice * numberOfSharesToBuy
 
         if thisTransactionsTotal > thisUsersCash:
-            return apology("out of cash", 403)
+            return apology("Not enough cash to make purchase.", 403)
         else:
             newCashBalance = thisUsersCash - thisTransactionsTotal
 
