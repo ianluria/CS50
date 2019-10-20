@@ -347,8 +347,9 @@ def quote():
                     listLengthIsSix = True
 
                     usersCurrentTickers["holdings"] = {
-                        ticker: {"QuoteNumber": usersCurrentTickers["holdings"][ticker]["QuoteNumber"] - 1, "Price": usersCurrentTickers["holdings"][ticker]["Price"]}
-                            for ticker in usersCurrentTickers["holdings"] if usersCurrentTickers["holdings"][ticker]["QuoteNumber"]-1 > 0}
+                        ticker: {"QuoteNumber": usersCurrentTickers["holdings"][ticker]
+                                 ["QuoteNumber"] - 1, "Price": usersCurrentTickers["holdings"][ticker]["Price"]}
+                        for ticker in usersCurrentTickers["holdings"] if usersCurrentTickers["holdings"][ticker]["QuoteNumber"]-1 > 0}
 
                     # Delete all of the user's existing database records so revised entries can be added
                     db.execute(
@@ -470,12 +471,14 @@ def sell():
 
     thisUser = session["username"]
 
-    usersCurrentHoldings = db.execute(
+    usersCurrentHoldings = {}
+
+    usersCurrentHoldings["holdings"] = db.execute(
         "SELECT Ticker, Shares FROM Holdings WHERE User = :user", user=thisUser)
 
     # Transform list of dictionaries into a dictionary of dictionaries
-    usersCurrentHoldings = {dictEntry["Ticker"]: {
-        "Shares": dictEntry["Shares"]} for dictEntry in usersCurrentHoldings}
+    usersCurrentHoldings["holdings"] = {dictEntry["Ticker"]: {
+        "Shares": dictEntry["Shares"]} for dictEntry in usersCurrentHoldings["holdings"]}
 
     if request.method == "GET":
 
@@ -497,27 +500,26 @@ def sell():
 
         # Error if ticker symbol is too long
         if len(tickerToSell) > 5:
-            return apology("length", 403)
+            return apology("Ticker length is too short.", 403)
 
         # Return an error if the user enters zero or fewer shares to buy
         if sharesToSell <= 0:
-            return apology("share error", 403)
+            return apology("Must sell at least one share.", 403)
 
-        if tickerToSell in usersCurrentHoldings:
+        if tickerToSell in usersCurrentHoldings["holdings"]:
 
             # User does own shares of the ticker to sell
 
-            numberOfSharesUserOwns = usersCurrentHoldings[tickerToSell]["Shares"]
+            numberOfSharesUserOwns = usersCurrentHoldings["holdings"][tickerToSell]["Shares"]
 
             # Create an error if the user tries to sell more shares than he/she owns
             if numberOfSharesUserOwns < sharesToSell:
-                return apology("Selling more shares than you own", 403)
+                return apology("Selling more shares than you own.", 403)
 
             # Get the current pricing information
             thisLookupResults = lookup(tickerToSell)
 
-            # Is this necessary?????
-            if not thisLookupResults:
+            if thisLookupResults == None:
                 return apology("Error getting API results", 403)
 
             thisSalePrice = thisLookupResults['price']
