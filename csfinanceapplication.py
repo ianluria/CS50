@@ -378,18 +378,20 @@ def updateQuotes():
 
         user = session["username"]
 
-        usersCurrentTickers = db.execute(
+        usersCurrentTickers = {}
+
+        usersCurrentTickers["holdings"] = db.execute(
             "SELECT Ticker, QuoteNumber FROM Quotes WHERE User = :user", user=user)
 
         # Create a dictionary of dictionaries from the list of dictionaries
-        usersCurrentTickers = {tickerDict["Ticker"]: {
-            "QuoteNumber": tickerDict["QuoteNumber"]} for tickerDict in usersCurrentTickers}
+        usersCurrentTickers["holdings"] = {tickerDict["Ticker"]: {
+            "QuoteNumber": tickerDict["QuoteNumber"]} for tickerDict in usersCurrentTickers["holdings"]}
 
         if request.args.get("tickerToDelete"):
             tickerToDelete = request.args.get("tickerToDelete")
 
             try:
-                deletedTickersQuoteNumber = usersCurrentTickers[tickerToDelete]["QuoteNumber"]
+                deletedTickersQuoteNumber = usersCurrentTickers["holdings"][tickerToDelete]["QuoteNumber"]
             except KeyError:
                 # Return an error if the tickerToDelete is not in usersCurrentTickers
                 return apology("Ticker to Delete Not Owned by User", 403)
@@ -397,22 +399,22 @@ def updateQuotes():
             db.execute("DELETE FROM Quotes WHERE User = :user AND Ticker = :tickerToDelete",
                        user=user, tickerToDelete=tickerToDelete)
 
-            usersCurrentTickers.pop(tickerToDelete)
+            usersCurrentTickers["holdings"].pop(tickerToDelete)
 
             # If there are any remaining tickers in usersCurrentTickers
-            if usersCurrentTickers:
+            if usersCurrentTickers["holdings"]:
 
                 # Renumber remaining quotes
-                for entry in usersCurrentTickers:
+                for entry in usersCurrentTickers["holdings"]:
                     # If the entry's QuoteNumber is greater than the deleted quote's QuoteNumber, move it down one place
-                    if usersCurrentTickers[entry]["QuoteNumber"] > deletedTickersQuoteNumber:
-                        usersCurrentTickers[entry]["QuoteNumber"] = usersCurrentTickers[entry]["QuoteNumber"] - 1
+                    if usersCurrentTickers["holdings"][entry]["QuoteNumber"] > deletedTickersQuoteNumber:
+                        usersCurrentTickers["holdings"][entry]["QuoteNumber"] = usersCurrentTickers["holdings"][entry]["QuoteNumber"] - 1
 
-                    db.execute("UPDATE Quotes SET QuoteNumber = :quoteNumber WHERE User = :user AND Ticker = :ticker",
-                               quoteNumber=usersCurrentTickers[entry]["QuoteNumber"], user=user, ticker=entry)
+                        db.execute("UPDATE Quotes SET QuoteNumber = :quoteNumber WHERE User = :user AND Ticker = :ticker",
+                                quoteNumber=usersCurrentTickers["holdings"][entry]["QuoteNumber"], user=user, ticker=entry)
 
         # If there are any remaining tickers in usersCurrentTickers
-        if usersCurrentTickers:
+        if usersCurrentTickers["holdings"]:
             # Update usersCurrentTickers with current pricing information
             usersCurrentTickers = prepareUsersCurrentHoldingsForDisplay(
                 usersCurrentTickers)
