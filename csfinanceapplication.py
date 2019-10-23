@@ -411,7 +411,7 @@ def updateQuotes():
                         usersCurrentTickers["holdings"][entry]["QuoteNumber"] = usersCurrentTickers["holdings"][entry]["QuoteNumber"] - 1
 
                         db.execute("UPDATE Quotes SET QuoteNumber = :quoteNumber WHERE User = :user AND Ticker = :ticker",
-                                quoteNumber=usersCurrentTickers["holdings"][entry]["QuoteNumber"], user=user, ticker=entry)
+                                   quoteNumber=usersCurrentTickers["holdings"][entry]["QuoteNumber"], user=user, ticker=entry)
 
         # If there are any remaining tickers in usersCurrentTickers
         if usersCurrentTickers["holdings"]:
@@ -432,29 +432,57 @@ def register():
     # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
 
+        errorMessage = ""
+
         # Log current user out (if logged in)
         session.clear()
 
-        # Ensure username was submitted
-        if not request.form.get("username"):
-            return apology("must provide username", 403)
-
-        # Ensure password was submitted
-        elif not request.form.get("password"):
-            return apology("must provide password", 403)
-
-        # Ensure password was confirmed
-        elif not request.form.get("confirmation"):
-            return apology("must confirm password", 403)
-
         username = request.form.get("username")
-        password = request.form.get("password")
 
-        # Ensure password matches its confirmation
-        if password != request.form.get("confirmation"):
-            return apology("password must be confirmed", 403)
+        # Ensure username was submitted
+        if not username:
+            errorMessage = "Must provide a username."
+        elif len(username) < 5 or len(username) > 250:
+            errorMessage = "Username must be at least five characters and not more than 250 characters."
+        # Check if a non-word character is present in username
+        elif re.match(r"^\w*\W", username):
+            errorMessage = "Username must only contain letters or numbers."
 
-        # return redirect("/")
+        # Check password for any errors
+        if not errorMessage:
+
+            password = request.form.get("password")
+
+            if not password:
+                errorMessage = "Must provide a password."
+            elif len(password) < 5 or len(password) > 250:
+                errorMessage = "Password must be at least five characters and not more than 250 characters."
+            elif not re.match(r"^[\w!@#$%&]*\d", username):
+                errorMessage = "Password must contain a number."
+            elif not re.match(r"^\w*[!@#$%&]", username):
+                errorMessage = "Password must contain a special character from list."
+            elif not request.form.get("confirmation"):
+                errorMessage = "Must confirm password."
+            elif not password = request.form.get("confirmation"):
+                errorMessage = "Password must match confirmation password."
+
+        # Test that username matches validation constraints
+
+        # Test for at least five characters and not more than 250 characters
+
+        # Test for no non-word characters
+
+        # Test that password matches validation constraints
+
+        # Test for at least five characters and not more than 250
+
+        # Test for at least one special character from list
+
+        # Test for at least one numerical character
+
+        if errorFound:
+            return apology(errorMessage, 403)
+
 
         hashedPassword = generate_password_hash(password)
 
