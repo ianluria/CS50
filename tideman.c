@@ -136,8 +136,8 @@ void add_pairs(void)
                 {
                     pair_count++;
 
-                    pairs[pair_count-1].winner = candidate1;
-                    pairs[pair_count-1].loser = candidate2;
+                    pairs[pair_count - 1].winner = candidate1;
+                    pairs[pair_count - 1].loser = candidate2;
                 }
             }
         }
@@ -148,7 +148,32 @@ void add_pairs(void)
 // Sort pairs in decreasing order by strength of victory
 void sort_pairs(void)
 {
-    // TODO
+    // One pair in array cannot be sorted
+    if (pair_count == 1)
+    {
+        return;
+    }
+
+
+    int pairsSwitched = -1;
+
+    while (pairsSwitched != 0)
+    {
+        pairsSwitched = 0;
+
+        for (int i = 0; i < pair_count - 1; i++)
+        {
+            // If the margin of victory of pairs[i] is less than margin of victory of pairs[i+1],
+            // switch them so the larger value comes first in array
+            if (preferences[pairs[i].winner][pairs[i].loser] < preferences[pairs[i + 1].winner][pairs[i + 1].loser])
+            {
+                pair tempPair = pairs[i];
+                pairs[i] = pairs[i+1];
+                pairs{i+1} = tempPair;
+                pairsSwitched++;
+            }
+        }
+    }
     return;
 }
 
