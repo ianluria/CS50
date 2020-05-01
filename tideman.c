@@ -154,7 +154,6 @@ void sort_pairs(void)
         return;
     }
 
-
     int pairsSwitched = -1;
 
     while (pairsSwitched != 0)
@@ -168,8 +167,8 @@ void sort_pairs(void)
             if (preferences[pairs[i].winner][pairs[i].loser] < preferences[pairs[i + 1].winner][pairs[i + 1].loser])
             {
                 pair tempPair = pairs[i];
-                pairs[i] = pairs[i+1];
-                pairs{i+1} = tempPair;
+                pairs[i] = pairs[i + 1];
+                pairs{i + 1} = tempPair;
                 pairsSwitched++;
             }
         }
@@ -180,7 +179,49 @@ void sort_pairs(void)
 // Lock pairs into the candidate graph in order, without creating cycles
 void lock_pairs(void)
 {
-    // TODO
+    for (int i = 0; i < pair_count; i++)
+    {
+        int winner = pairs[i].winner;
+        int loser = pairs[i].loser;
+
+        // The strongest victory is always added first
+        if (i == 0)
+        {
+            locked[winner][loser] = True;
+        }
+        else
+        {
+            bool circle = true;
+            int test = loser;
+            while (!circle)
+            {
+
+                for (int x = 0; x < candidate_count; x++)
+                {
+                    if (x != test)
+                    {
+                        // Check if loser has also been a winner
+                        if (test == winner && x == loser)
+                        {
+                            circle == true;
+                        }
+
+                        if (locked[test][x])
+                        {
+                            // test becomes the new loser
+                            test = x;
+                        }
+                    }
+                }
+
+                // If falls out of for loop, it is not a circle
+                circle = false;
+            }
+
+            locked[winner][loser] = True;
+        }
+    }
+
     return;
 }
 
