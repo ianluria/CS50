@@ -191,31 +191,29 @@ void lock_pairs(void)
         }
         else
         {
-            bool circle = true;
+
             int test = loser;
-            while (!circle)
+
+            for (int x = 0; x < candidate_count; x++)
             {
-
-                for (int x = 0; x < candidate_count; x++)
+                if (x != test)
                 {
-                    if (x != test)
+                    if (test == winner && x == loser)
                     {
-                        // Check if loser has also been a winner
-                        if (test == winner && x == loser)
-                        {
-                            circle == true;
-                        }
-
+                        // A full loop back to the origin is possible, therefore this pair 
+                        // should not be added and no more pairs can be added.
+                        return;
+                    }
+                    else
+                    {
                         if (locked[test][x])
                         {
                             // test becomes the new loser
                             test = x;
+                            x = 0;
                         }
                     }
                 }
-
-                // If falls out of for loop, it is not a circle
-                circle = false;
             }
 
             locked[winner][loser] = True;
