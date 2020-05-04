@@ -110,12 +110,12 @@ bool vote(int rank, string name, int ranks[])
     return false;
 }
 
-// Update preferences given one voter's ranks
+// For each candidate, add one to preferences for each candidate ranked lower than it
 void record_preferences(int ranks[])
 {
     for (int winner = 0; winner < candidate_count; winner++)
     {
-        for (int loser = candidate_count - 1; loser < winner; loser--)
+        for (int loser = candidate_count - 1; loser > winner; loser--)
         {
             preferences[ranks[winner]][ranks[loser]]++;
         }
@@ -200,7 +200,7 @@ void lock_pairs(void)
                 {
                     if (test == winner && x == loser)
                     {
-                        // A full loop back to the origin is possible, therefore this pair 
+                        // A full loop back to the origin is possible, therefore this pair
                         // should not be added and no more pairs can be added.
                         return;
                     }
