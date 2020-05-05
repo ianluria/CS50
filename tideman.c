@@ -110,9 +110,14 @@ bool vote(int rank, string name, int ranks[])
     return false;
 }
 
-// For each candidate, add one to preferences for each candidate ranked lower than it
+// Add individual voter's preferences to the global preferences array
 void record_preferences(int ranks[])
 {
+    if (candidate_count == 1)
+    {
+        return;
+    }
+
     for (int winner = 0; winner < candidate_count; winner++)
     {
         for (int loser = candidate_count - 1; loser > winner; loser--)
@@ -126,6 +131,11 @@ void record_preferences(int ranks[])
 // Record pairs of candidates where one is preferred over the other
 void add_pairs(void)
 {
+    if (candidate_count == 1)
+    {
+        return;
+    }
+
     for (int candidate1 = 0; candidate1 < candidate_count; candidate1++)
     {
         for (int candidate2 = 0; candidate2 < candidate_count; candidate2++)
@@ -168,7 +178,7 @@ void sort_pairs(void)
             {
                 pair tempPair = pairs[i];
                 pairs[i] = pairs[i + 1];
-                pairs{i + 1} = tempPair;
+                pairs[i + 1] = tempPair;
                 pairsSwitched++;
             }
         }
@@ -176,9 +186,16 @@ void sort_pairs(void)
     return;
 }
 
-// Lock pairs into the candidate graph in order, without creating cycles
+// Lock pairs into the candidate graph in order of strength, without creating cycles
+// Test losers to see if they have been winners. If losers can be traced back to the
+// original winner and loser pair, a full cycle is possible and edge should not be added
 void lock_pairs(void)
 {
+    if (pair_count == 1)
+    {
+        return;
+    }
+
     for (int i = 0; i < pair_count; i++)
     {
         int winner = pairs[i].winner;
@@ -191,7 +208,6 @@ void lock_pairs(void)
         }
         else
         {
-
             int test = loser;
 
             for (int x = 0; x < candidate_count; x++)
@@ -206,6 +222,7 @@ void lock_pairs(void)
                     }
                     else
                     {
+                        // Test if test has been a winner
                         if (locked[test][x])
                         {
                             // test becomes the new loser
@@ -226,6 +243,6 @@ void lock_pairs(void)
 // Print the winner of the election
 void print_winner(void)
 {
-    // TODO
+    printf("%s\n", candidates[pairs[0].winner])
     return;
 }
