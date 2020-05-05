@@ -1,5 +1,6 @@
 #include <cs50.h>
 #include <stdio.h>
+#include <string.h>
 
 // Max number of candidates
 #define MAX 9
@@ -100,7 +101,7 @@ bool vote(int rank, string name, int ranks[])
 {
     for (int i = 0; i < candidate_count; i++)
     {
-        if (name == candidates[i])
+        if (strcmp(name, candidates[i]) == 0)
         {
             // The rank is the index, and the value is the candidate's array index position
             ranks[rank] = i;
@@ -125,6 +126,20 @@ void record_preferences(int ranks[])
             preferences[ranks[winner]][ranks[loser]]++;
         }
     }
+
+    // Print preferences for testing
+    for (int winner = 0; winner < candidate_count; winner++)
+    {
+
+        for (int loser = 0; loser < candidate_count; loser++)
+        {
+            if (winner != loser)
+            {
+                printf("%s : %s = %i\n", candidates[winner], candidates[loser], preferences[winner][loser]);
+            }
+        }
+    }
+
     return;
 }
 
@@ -152,6 +167,15 @@ void add_pairs(void)
             }
         }
     }
+
+    // Print pairs
+    printf("add_pairs\n");
+
+    for (int i = 0; i < pair_count; i++)
+    {
+        printf("%s & %s\n", candidates[pairs[i].winner], candidates[pairs[i].loser]);
+    }
+
     return;
 }
 
@@ -204,7 +228,7 @@ void lock_pairs(void)
         // The strongest victory is always added first
         if (i == 0)
         {
-            locked[winner][loser] = True;
+            locked[winner][loser] = true;
         }
         else
         {
@@ -233,8 +257,16 @@ void lock_pairs(void)
                 }
             }
 
-            locked[winner][loser] = True;
+            locked[winner][loser] = true;
         }
+    }
+
+    // Print pairs
+    printf("\nlock_pairs\n");
+
+    for (int i = 0; i < pair_count; i++)
+    {
+        printf("%s & %s\n", candidates[pairs[i].winner], candidates[pairs[i].loser]);
     }
 
     return;
@@ -243,6 +275,40 @@ void lock_pairs(void)
 // Print the winner of the election
 void print_winner(void)
 {
-    printf("%s\n", candidates[pairs[0].winner])
+
+    if (candidate_count == 1)
+    {
+        printf("%s\n", candidates[0]);
+        return;
+    }
+
+    // Check if each candidate has had a win but no loss in from the pairs that are locked
+    // A candidate with a win but no losses will be considered the source of the graph
+    bool onlyWinner[candidate_count][2];
+
+    for (int i = 0; i < candidate_count; i++)
+    {
+        onlyWinner[i][0] = false;
+        onlyWinner[i][1] = false;
+    }
+
+    for (int i = 0; i < pair_count; i++)
+    {
+
+        if (locked[pairs[i].winner][pairs[i].loser])
+        {
+            onlyWinner[pairs[i].winner][0] = true;
+            onlyWinner[pairs[i].loser][1] = true;
+        }
+    }
+
+    for (int i = 0; i < candidate_count; i++)
+    {
+        if (onlyWinner[i][0] && !onlyWinner[i][1])
+        {
+            printf("%s\n", candidates[i]);
+        }
+    }
+
     return;
 }
