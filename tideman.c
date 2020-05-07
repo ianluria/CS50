@@ -96,7 +96,7 @@ int main(int argc, string argv[])
     return 0;
 }
 
-// Update ranks given a new vote
+// Update ranks given a new and valid vote
 bool vote(int rank, string name, int ranks[])
 {
     for (int i = 0; i < candidate_count; i++)
@@ -111,7 +111,7 @@ bool vote(int rank, string name, int ranks[])
     return false;
 }
 
-// Add individual voter's preferences to the global preferences array
+// Add an individual voter's preferences to the global preferences array
 void record_preferences(int ranks[])
 {
     if (candidate_count == 1)
@@ -127,23 +127,23 @@ void record_preferences(int ranks[])
         }
     }
 
-    // Print preferences for testing
-    for (int winner = 0; winner < candidate_count; winner++)
-    {
+    // // Print preferences for testing
+    // for (int winner = 0; winner < candidate_count; winner++)
+    // {
 
-        for (int loser = 0; loser < candidate_count; loser++)
-        {
-            if (winner != loser)
-            {
-                printf("%s : %s = %i\n", candidates[winner], candidates[loser], preferences[winner][loser]);
-            }
-        }
-    }
+    //     for (int loser = 0; loser < candidate_count; loser++)
+    //     {
+    //         if (winner != loser)
+    //         {
+    //             printf("%s : %s = %i\n", candidates[winner], candidates[loser], preferences[winner][loser]);
+    //         }
+    //     }
+    // }
 
     return;
 }
 
-// Record pairs of candidates where one is preferred over the other
+// Globally, record pairs of candidates where one is preferred over the other
 void add_pairs(void)
 {
     if (candidate_count == 1)
@@ -163,23 +163,27 @@ void add_pairs(void)
 
                     pairs[pair_count - 1].winner = candidate1;
                     pairs[pair_count - 1].loser = candidate2;
+
+                    printf("%s is prefered over %s\n", candidates[candidate1], candidates[candidate2]);
                 }
             }
         }
     }
 
     // Print pairs
-    printf("add_pairs\n");
+    printf("add_pairs pair count: %i\n", pair_count);
 
     for (int i = 0; i < pair_count; i++)
     {
         printf("%s & %s\n", candidates[pairs[i].winner], candidates[pairs[i].loser]);
     }
 
+    printf("End add pairs.\n");
+
     return;
 }
 
-// Sort pairs in decreasing order by strength of victory
+// Sort pairs in descending order by strength of victory
 void sort_pairs(void)
 {
     // One pair in array cannot be sorted
@@ -215,6 +219,9 @@ void sort_pairs(void)
 // original winner and loser pair, a full cycle is possible and edge should not be added
 void lock_pairs(void)
 {
+
+    printf("Enter lock pairs.\n");
+
     if (pair_count == 1)
     {
         return;
@@ -242,6 +249,20 @@ void lock_pairs(void)
                     {
                         // A full loop back to the origin is possible, therefore this pair
                         // should not be added and no more pairs can be added.
+
+                        // Print pairs
+                        printf("lock_pairs\n");
+
+                        for (int p = 0; p < candidate_count; p++)
+                        {
+                            for (int q = 0; q < candidate_count; q++)
+                            {
+                                if (p != q && locked[p][q])
+                                {
+                                    printf("%s & %s\n", candidates[p], candidates[q]);
+                                }
+                            }
+                        }
                         return;
                     }
                     else
@@ -261,14 +282,6 @@ void lock_pairs(void)
         }
     }
 
-    // Print pairs
-    printf("\nlock_pairs\n");
-
-    for (int i = 0; i < pair_count; i++)
-    {
-        printf("%s & %s\n", candidates[pairs[i].winner], candidates[pairs[i].loser]);
-    }
-
     return;
 }
 
@@ -278,12 +291,12 @@ void print_winner(void)
 
     if (candidate_count == 1)
     {
-        printf("%s\n", candidates[0]);
+        printf("one candidate winner %s\n", candidates[0]);
         return;
     }
 
-    // Check if each candidate has had a win but no loss in from the pairs that are locked
-    // A candidate with a win but no losses will be considered the source of the graph
+    // Check if each candidate has had a win but no loss from the pairs that are locked.
+    // A candidate with a win but no losses will be considered the source of the graph.
     bool onlyWinner[candidate_count][2];
 
     for (int i = 0; i < candidate_count; i++)
@@ -306,7 +319,7 @@ void print_winner(void)
     {
         if (onlyWinner[i][0] && !onlyWinner[i][1])
         {
-            printf("%s\n", candidates[i]);
+            printf("winner %s\n", candidates[i]);
         }
     }
 
