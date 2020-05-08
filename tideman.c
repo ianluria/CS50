@@ -164,7 +164,7 @@ void add_pairs(void)
                     pairs[pair_count - 1].winner = candidate1;
                     pairs[pair_count - 1].loser = candidate2;
 
-                    printf("%s is prefered over %s\n", candidates[candidate1], candidates[candidate2]);
+                    // printf("%s is prefered over %s\n", candidates[candidate1], candidates[candidate2]);
                 }
             }
         }
@@ -211,6 +211,14 @@ void sort_pairs(void)
             }
         }
     }
+
+    // Print pairs
+    printf("Pairs in order.\n");
+    for (int i = 0; i < pair_count; i++)
+    {
+        printf("W:%s - L:%s\n", candidates[pairs[i].winner], candidates[pairs[i].loser]);
+    }
+
     return;
 }
 
@@ -232,6 +240,8 @@ void lock_pairs(void)
         int winner = pairs[i].winner;
         int loser = pairs[i].loser;
 
+        printf("winner = %i\nloser= %i\n",winner, loser);
+
         // The strongest victory is always added first
         if (i == 0)
         {
@@ -240,9 +250,11 @@ void lock_pairs(void)
         else
         {
             int test = loser;
+            printf("test = %i\n", test);
 
             for (int x = 0; x < candidate_count; x++)
             {
+                printf("test = %i, x = %i\n", test, x);
                 if (x != test)
                 {
                     if (test == winner && x == loser)
@@ -253,16 +265,16 @@ void lock_pairs(void)
                         // Print pairs
                         printf("lock_pairs\n");
 
-                        for (int p = 0; p < candidate_count; p++)
-                        {
-                            for (int q = 0; q < candidate_count; q++)
-                            {
-                                if (p != q && locked[p][q])
-                                {
-                                    printf("%s & %s\n", candidates[p], candidates[q]);
-                                }
-                            }
-                        }
+                        // for (int p = 0; p < candidate_count; p++)
+                        // {
+                        //     for (int q = 0; q < candidate_count; q++)
+                        //     {
+                        //         if (p != q && locked[p][q])
+                        //         {
+                        //             printf("%s & %s\n", candidates[p], candidates[q]);
+                        //         }
+                        //     }
+                        // }
                         return;
                     }
                     else
@@ -278,6 +290,7 @@ void lock_pairs(void)
                 }
             }
 
+            printf("locked true\n");
             locked[winner][loser] = true;
         }
     }
