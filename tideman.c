@@ -32,6 +32,7 @@ void add_pairs(void);
 void sort_pairs(void);
 void lock_pairs(void);
 void print_winner(void);
+bool testLoser(int test, int winner);
 
 int main(int argc, string argv[])
 {
@@ -127,19 +128,6 @@ void record_preferences(int ranks[])
         }
     }
 
-    // // Print preferences for testing
-    // for (int winner = 0; winner < candidate_count; winner++)
-    // {
-
-    //     for (int loser = 0; loser < candidate_count; loser++)
-    //     {
-    //         if (winner != loser)
-    //         {
-    //             printf("%s : %s = %i\n", candidates[winner], candidates[loser], preferences[winner][loser]);
-    //         }
-    //     }
-    // }
-
     return;
 }
 
@@ -163,22 +151,10 @@ void add_pairs(void)
 
                     pairs[pair_count - 1].winner = candidate1;
                     pairs[pair_count - 1].loser = candidate2;
-
-                    // printf("%s is prefered over %s\n", candidates[candidate1], candidates[candidate2]);
                 }
             }
         }
     }
-
-    // Print pairs
-    printf("add_pairs pair count: %i\n", pair_count);
-
-    for (int i = 0; i < pair_count; i++)
-    {
-        printf("%s & %s\n", candidates[pairs[i].winner], candidates[pairs[i].loser]);
-    }
-
-    printf("End add pairs.\n");
 
     return;
 }
@@ -212,13 +188,6 @@ void sort_pairs(void)
         }
     }
 
-    // Print pairs
-    printf("Pairs in order.\n");
-    for (int i = 0; i < pair_count; i++)
-    {
-        printf("W:%s - L:%s\n", candidates[pairs[i].winner], candidates[pairs[i].loser]);
-    }
-
     return;
 }
 
@@ -227,8 +196,6 @@ void sort_pairs(void)
 // original winner and loser pair, a full cycle is possible and edge should not be added
 void lock_pairs(void)
 {
-
-    printf("Enter lock pairs.\n");
 
     if (pair_count == 1)
     {
@@ -240,8 +207,6 @@ void lock_pairs(void)
         int winner = pairs[i].winner;
         int loser = pairs[i].loser;
 
-        printf("winner = %i\nloser= %i\n",winner, loser);
-
         // The strongest victory is always added first
         if (i == 0)
         {
@@ -250,61 +215,55 @@ void lock_pairs(void)
         else
         {
             int test = loser;
-            printf("test = %i\n", test);
 
-            for (int x = 0; x < candidate_count; x++)
+            if (testLoser(test, winner))
             {
-                printf("test = %i, x = %i\n", test, x);
-                if (x != test)
-                {
-                    if (test == winner && x == loser)
-                    {
-                        // A full loop back to the origin is possible, therefore this pair
-                        // should not be added and no more pairs can be added.
 
-                        // Print pairs
-                        printf("lock_pairs\n");
+                // A full loop back to the origin is possible, therefore this pair
+                // should not be added and no more pairs can be added.
 
-                        // for (int p = 0; p < candidate_count; p++)
-                        // {
-                        //     for (int q = 0; q < candidate_count; q++)
-                        //     {
-                        //         if (p != q && locked[p][q])
-                        //         {
-                        //             printf("%s & %s\n", candidates[p], candidates[q]);
-                        //         }
-                        //     }
-                        // }
-                        return;
-                    }
-                    else
-                    {
-                        // Test if test has been a winner
-                        if (locked[test][x])
-                        {
-                            // test becomes the new loser
-                            test = x;
-                            x = 0;
-                        }
-                    }
-                }
+                return;
             }
 
-            printf("locked true\n");
             locked[winner][loser] = true;
         }
     }
-
     return;
 }
 
-// Print the winner of the election
+// Test to see if each loser has also been a winner, and can then be traced back to the origin.
+bool testLoser(int test, int winner)
+{
+    if (test == winner)
+    {
+        return true;
+    }
+
+    for (int i = 0; i < candidate_count; i++)
+    {
+        if (i != test)
+        {
+            if (locked[test][i])
+            {
+                if (testLoser(i, winner))
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    // No more candidates left to check for winner
+    return false;
+}
+
+// Print the winner of the election by determining who is the source
 void print_winner(void)
 {
 
     if (candidate_count == 1)
     {
-        printf("one candidate winner %s\n", candidates[0]);
+        printf("%s\n", candidates[0]);
         return;
     }
 
@@ -332,7 +291,7 @@ void print_winner(void)
     {
         if (onlyWinner[i][0] && !onlyWinner[i][1])
         {
-            printf("winner %s\n", candidates[i]);
+            printf("%s\n", candidates[i]);
         }
     }
 
