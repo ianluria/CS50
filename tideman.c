@@ -267,32 +267,18 @@ void print_winner(void)
         return;
     }
 
-    // Check if each candidate has had a win but no loss from the pairs that are locked.
-    // A candidate with a win but no losses will be considered the source of the graph.
-    bool onlyWinner[candidate_count][2];
-
     for (int i = 0; i < candidate_count; i++)
     {
-        onlyWinner[i][0] = false;
-        onlyWinner[i][1] = false;
-    }
 
-    for (int i = 0; i < pair_count; i++)
-    {
-
-        if (locked[pairs[i].winner][pairs[i].loser])
+        for (int j = 0; j < candidate_count; j++)
         {
-            onlyWinner[pairs[i].winner][0] = true;
-            onlyWinner[pairs[i].loser][1] = true;
+            if (locked[j][i])
+            {
+                continue;
+            }
         }
-    }
 
-    for (int i = 0; i < candidate_count; i++)
-    {
-        if (onlyWinner[i][0] && !onlyWinner[i][1])
-        {
-            printf("%s\n", candidates[i]);
-        }
+        printf("%s\n", candidates[i]);
     }
 
     return;
