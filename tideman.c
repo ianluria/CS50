@@ -216,16 +216,16 @@ void lock_pairs(void)
         {
             int test = loser;
 
+            // Test if a cycle can be created back to the winner and loser pair.
             if (testLoser(test, winner))
             {
 
-                // A full loop back to the origin is possible, therefore this pair
-                // should not be added and no more pairs can be added.
-
-                return;
+                // A full loop back to the origin is possible, therefore this pair should not be added
             }
-
-            locked[winner][loser] = true;
+            else
+            {
+                locked[winner][loser] = true;
+            }
         }
     }
     return;
